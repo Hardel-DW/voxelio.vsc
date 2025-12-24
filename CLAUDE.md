@@ -27,31 +27,6 @@ Nullish Coalescing -> ??
 Logical Assignment -> ||=
 Float16Array
 
-### Architecture
-
-```
-voxelio-vsc/
-├── src/                          # Extension VS Code (tsdown)
-│   ├── extension.ts              # Activation, commands, providers
-│   ├── providers/
-│   │   └── NodeEditorProvider.ts # WebviewViewProvider
-│   └── services/
-│       ├── CacheService.ts       # globalStorageUri for McDoc/registries
-│       ├── VersionDetector.ts    # Parse pack.mcmeta → pack_format
-│       └── RegistryLoader.ts     # Fetch + cache registries
-├── webview/                      # React app (vite)
-│   ├── src/
-│   │   ├── nodes/                # Custom node components (StringNode, StructNode...)
-│   │   ├── stores/               # Zustand stores
-│   │   ├── helpers/
-│   │   │   └── McdocHelpers.ts   # Port from Misode: simplifyType(), getDefault()
-│   │   └── main.tsx
-│   └── vite.config.ts
-└── dist/
-    ├── extension.js              # tsdown output
-    └── webview/                  # vite output
-```
-
 # Dependencies
 **Extension (src/):**
 - `@types/vscode` - VS Code API types
@@ -67,15 +42,14 @@ voxelio-vsc/
 - `@spyglassmc/mcdoc` ^0.3.43
 - `@spyglassmc/json` ^0.3.46
 - `@spyglassmc/java-edition` ^0.3.54
-- `vite` 8.x + `@vitejs/plugin-react` + `babel-plugin-react-compiler`
+- `vite` 8.x + `@vitejs/plugin-react`
 - `tailwindcss` ^4.x
-
 
 ## Development Commands
 - **Dev server**: `npm run dev` - Start Vite development server
 - **Build**: `pnpm build`        - tsdown → dist/extension.js
 - **Build Webview**: `pnpm build:webview` - vite → dist/webview/
-- **Lint/Typecheck**: `npm run lint` - Run TypeScript compiler without emit for
+- **Typecheck**: `npm run lint` - Run TypeScript compiler without emit for
   type checking
 - **Format**: `npm run biome:format` - Format code with Biome
 - **Lint check**: `npm run biome:check` - Check code with Biome linter
@@ -84,19 +58,23 @@ voxelio-vsc/
 ### Spyglass Integration
 Spyglass = LSP engine for McDoc validation. Key concepts:
 
-```typescript
-// 1. Create service per version
-const service = await SpyglassService.create(versionId, client);
+Core Flow:
+1. SpyglassService.openFile(uri) → DocAndNode (doc + AST)
+2. JsonFileView receives docAndNode + creates McdocContext with makeEdit
+3. McdocRoot/Head/Body render the AST with McDoc schema
+4. Edit via ctx.makeEdit → modifies AST → service.format → save
 
-// 2. Get checker context for validation
-const ctx = service.getCheckerContext(doc, errors);
+Key concepts:
+- SpyglassService.applyEdit(uri, editFn): modifies AST, reformats, notifies watchers
+- McdocContext = CheckerContext + makeEdit: context passed to all components
+- service.format(node, doc): serializes modified AST to formatted JSON
+- watchFile/unwatchFile: real-time synchronization
 
-// 3. Open/validate file
-const docAndNode = await service.openFile(uri);
-
-// 4. Apply functional edits
-await service.applyEdit(uri, (node) => { /* mutate AST */ });
-```
+For us (VS Code):
+- Extension manages the real file (VS Code TextDocument)
+- Webview receives content, parses to AST, displays node editor
+- Edits in node editor → message to extension → modify real file
+- Edits in VS Code → message to webview → re-parse AST → refresh UI
 
 ### Misode Files to Port
 
@@ -144,38 +122,3 @@ Storage options:
 - `context.globalStorageUri` → Heavy files (McDoc, registries)
 - `context.workspaceState` → Per-workspace data
 - `context.globalState` → Small persistent settings
-
-### Version Detection
-```typescript
-class VersionDetector {
-  async detect(): Promise<{ packFormat: number; version: string } | null> {
-    const files = await vscode.workspace.findFiles('**/pack.mcmeta', null, 1);
-    if (files.length === 0) return null;
-    const content = JSON.parse(await vscode.workspace.fs.readFile(files[0]));
-    return { packFormat: content.pack?.pack_format };
-  }
-}
-```
-
-### Extension ↔ Webview Communication
-```typescript
-// Extension → Webview
-webview.postMessage({ type: 'schema', data: mcdocType });
-webview.postMessage({ type: 'registries', data: registries });
-
-// Webview → Extension
-vscode.postMessage({ type: 'edit', path: ['conditions', 0], value: {...} });
-vscode.postMessage({ type: 'save' });
-```
-
-### Registry Sources
-1. **Vanilla registries**: `misode/mcmeta` GitHub (cached)  `https://raw.githubusercontent.com/misode/mcmeta/summary/registries/data.min.json`
-2. **McDoc symbols**: `@spyglassmc/java-edition` or fetched
-3. **Pack registries**: Parsed from workspace datapack files
-
-### Key Implementation Notes
-1. **No esbuild** - Use tsdown (rolldown/Rust)
-2. **TypeScript 7** - Use `@typescript/native-preview` (tsgo)
-3. **React 19** - No useMemo/useCallback (auto-optimized), no useForwardRef
-4. **Tailwind v4** - Use `@tailwindcss/vite` plugin
-5. **Webview isolation** - Full control over design, separate build

@@ -1,17 +1,38 @@
+import type * as vscode from "vscode";
+
 export interface PackInfo {
     readonly uri: vscode.Uri;
     readonly packFormat: number;
     readonly description?: string;
 }
 
-export interface WebviewMessage {
-    readonly type: string;
-    readonly payload?: unknown;
+export interface VersionConfig {
+    readonly id: string;
+    readonly ref: string;
+    readonly dynamic?: boolean;
 }
 
-export interface ExtensionMessage {
-    readonly type: "init" | "schema" | "registries" | "file";
-    readonly payload: unknown;
+export interface InitPayload {
+    readonly packFormat: number;
+    readonly version?: VersionConfig;
+    readonly error?: string;
 }
 
-import type * as vscode from "vscode";
+export interface RegistriesPayload {
+    readonly [registry: string]: string[];
+}
+
+export interface FilePayload {
+    readonly uri: string;
+    readonly content: string;
+}
+
+export type ExtensionMessage =
+    | { readonly type: "init"; readonly payload: InitPayload }
+    | { readonly type: "registries"; readonly payload: RegistriesPayload }
+    | { readonly type: "file"; readonly payload: FilePayload };
+
+export type WebviewMessage =
+    | { readonly type: "ready" }
+    | { readonly type: "requestFile"; readonly uri: string }
+    | { readonly type: "saveFile"; readonly uri: string; readonly content: string };

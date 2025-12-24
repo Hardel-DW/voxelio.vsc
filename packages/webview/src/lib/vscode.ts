@@ -1,3 +1,5 @@
+import type { WebviewMessage } from "@/types.ts";
+
 interface VsCodeApi {
     postMessage(message: unknown): void;
     getState(): unknown;
@@ -6,8 +8,16 @@ interface VsCodeApi {
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
-export const vscode = acquireVsCodeApi();
+const vscode = acquireVsCodeApi();
 
-export function postMessage<T>(type: string, payload?: T): void {
-    vscode.postMessage({ type, payload });
+export function postMessage(message: WebviewMessage): void {
+    vscode.postMessage(message);
+}
+
+export function requestFile(uri: string): void {
+    postMessage({ type: "requestFile", uri });
+}
+
+export function saveFile(uri: string, content: string): void {
+    postMessage({ type: "saveFile", uri, content });
 }

@@ -1,48 +1,45 @@
-import { useExtensionMessages } from "./hooks/useExtensionMessages.ts";
-import { NodeTree } from "@/nodes/NodeTree.tsx";
+import { JsonFileView } from "@/components/JsonFileView.tsx";
+import { useExtensionMessages } from "@/hooks/useExtensionMessages.ts";
 import { useEditorStore } from "@/stores/editor.ts";
-import type { StructNode } from "@/types.ts";
+import { useFileStore } from "@/stores/file.ts";
+import { useSpyglassStore } from "@/stores/spyglass.ts";
 
-const mockSchema: StructNode = {
-    kind: "struct",
-    fields: [
-        {
-            kind: "enum",
-            key: "type",
-            value: "minecraft:crafting_shaped",
-            options: ["minecraft:crafting_shaped", "minecraft:crafting_shapeless", "minecraft:smelting"]
-        },
-        { kind: "string", key: "group", value: "boat" },
-        { kind: "enum", key: "category", value: "misc", options: ["misc", "building", "redstone", "equipment", "food"] },
-        {
-            kind: "list",
-            key: "pattern",
-            itemType: { kind: "string", value: "" },
-            items: [
-                { kind: "string", value: "# #" },
-                { kind: "string", value: "###" }
-            ]
-        },
-        {
-            kind: "struct",
-            key: "key",
-            fields: [{ kind: "reference", key: "#", registry: "item", value: "minecraft:acacia_planks" }]
-        },
-        {
-            kind: "struct",
-            key: "result",
-            fields: [
-                { kind: "reference", key: "id", registry: "item", value: "minecraft:acacia_boat" },
-                { kind: "number", key: "count", value: 1, min: 1, max: 64, integer: true }
-            ]
-        },
-        { kind: "boolean", key: "show_notification", value: true }
-    ]
-};
-
-export function App() {
+export function App(): React.ReactNode {
     useExtensionMessages();
-    const packFormat = useEditorStore((s) => s.packFormat);
 
-    return <div className="flex flex-col gap-1 p-2">{packFormat !== null && <NodeTree node={mockSchema} path={[]} />}</div>;
+    const packFormat = useEditorStore((s) => s.packFormat);
+    const version = useEditorStore((s) => s.version);
+    const loading = useSpyglassStore((s) => s.loading);
+    const error = useSpyglassStore((s) => s.error);
+    const service = useSpyglassStore((s) => s.service);
+    const docAndNode = useFileStore((s) => s.docAndNode);
+
+    if (error) {
+        return <div className="p-4 text-red-400">Error: {error}</div>;
+    }
+
+    if (loading) {
+        return <div className="p-4 text-gray-400">Loading Spyglass...</div>;
+    }
+
+    if (!packFormat || !version) {
+        return <div className="p-4 text-gray-400">Waiting for pack info...</div>;
+    }
+
+    if (!service) {
+        return <div className="p-4 text-gray-400">Initializing Spyglass...</div>;
+    }
+
+    if (!docAndNode) {
+        return (
+            <div className="flex flex-col gap-2 p-4">
+                <div className="text-sm text-gray-300">
+                    Pack Format: {packFormat} | Version: {version.id}
+                </div>
+                <div className="text-xs text-gray-500">Open a JSON file in the data folder to start editing.</div>
+            </div>
+        );
+    }
+
+    return <JsonFileView docAndNode={docAndNode} service={service} />;
 }

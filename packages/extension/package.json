@@ -44,8 +44,10 @@
     "scripts": {
         "build": "tsdown",
         "dev": "tsdown --watch",
-        "lint": "biome check ./src",
-        "typecheck": "tsgo --noEmit"
+        "lint": "tsgo --noEmit",
+        "biome:check": "biome check ./src",
+        "biome:format": "biome format --write ./src",
+        "biome:unsafefix": "biome check --write --unsafe ./src"
     },
     "devDependencies": {
         "@types/vscode": "^1.96.0",

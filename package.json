@@ -1,0 +1,19 @@
+{
+    "name": "voxelio-vsc",
+    "private": true,
+    "type": "module",
+    "packageManager": "pnpm@9.15.0",
+    "scripts": {
+        "build": "pnpm -r build",
+        "dev": "pnpm -r --parallel dev",
+        "lint": "pnpm -r lint",
+        "biome:check": "biome check .",
+        "biome:format": "biome format --write .",
+        "biome:unsafefix": "biome check --write --unsafe .",
+        "typecheck": "pnpm -r typecheck"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.3.10",
+        "@typescript/native-preview": "7.0.0-dev.20251208.1"
+    }
+}

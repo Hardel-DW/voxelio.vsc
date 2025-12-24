@@ -1,0 +1,54 @@
+{
+    "name": "voxelio-extension",
+    "displayName": "Voxelio",
+    "description": "Visual node editor for Minecraft datapacks",
+    "version": "0.0.1",
+    "publisher": "voxelio",
+    "engines": {
+        "vscode": "^1.96.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "workspaceContains:pack.mcmeta"
+    ],
+    "main": "./dist/extension.cjs",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "voxelio",
+                    "title": "Voxelio",
+                    "icon": "$(json)"
+                }
+            ]
+        },
+        "views": {
+            "voxelio": [
+                {
+                    "type": "webview",
+                    "id": "voxelio.nodeEditor",
+                    "name": "Node Editor"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "voxelio.openEditor",
+                "title": "Open Node Editor",
+                "category": "Voxelio"
+            }
+        ]
+    },
+    "scripts": {
+        "build": "tsdown",
+        "dev": "tsdown --watch",
+        "lint": "biome check ./src",
+        "typecheck": "tsgo --noEmit"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.96.0",
+        "tsdown": "0.17.0-beta.4"
+    }
+}

@@ -42,12 +42,10 @@ export function ListHead({ type, node, ctx }: NodeProps<ListType>): React.ReactN
         });
     };
 
+    // Misode: uses <button class="add"> for adding items
     return (
-        <div className="list-head">
-            <span className="list-count">{itemCount} items</span>
-            <button type="button" className="add-button" onClick={handleAdd}>
-                +
-            </button>
-        </div>
+        <button type="button" className="add" onClick={handleAdd}>
+            + Add ({itemCount})
+        </button>
     );
 }

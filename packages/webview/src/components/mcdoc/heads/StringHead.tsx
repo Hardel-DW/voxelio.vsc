@@ -6,7 +6,7 @@ import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 
 type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;
 
-// Misode: McdocRenderer.tsx:166-182
+// Misode: McdocRenderer.tsx:166-234
 export function StringHead({ node, ctx, optional }: NodeProps<StringType>): React.ReactNode {
     const nodeValue = JsonStringNode.is(node) ? node.value : "";
 
@@ -18,7 +18,6 @@ export function StringHead({ node, ctx, optional }: NodeProps<StringType>): Reac
             if (newValue.length === 0 && optional) {
                 return undefined;
             }
-            // Misode: uses core.Source + core.string to create proper node
             const valueMap = [{ inner: Range.create(0), outer: Range.create(range.start) }];
             const source = new Source(JSON.stringify(newValue), valueMap);
             const stringNode = string(JsonStringOptions)(source, ctx);
@@ -26,5 +25,6 @@ export function StringHead({ node, ctx, optional }: NodeProps<StringType>): Reac
         });
     };
 
-    return <input type="text" className="string-input" value={nodeValue} onChange={handleChange} />;
+    // Misode: direct <input> in node-header, no wrapper
+    return <input type="text" value={nodeValue} onChange={handleChange} />;
 }

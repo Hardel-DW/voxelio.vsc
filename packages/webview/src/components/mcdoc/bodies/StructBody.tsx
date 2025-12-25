@@ -5,10 +5,11 @@ import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { LiteralType } from "@spyglassmc/mcdoc";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
+import { Key } from "@/components/mcdoc/Key.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import type { SimplifiedMcdocField, SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
-import { formatIdentifier, getDefault, simplifyType } from "@/services/McdocHelpers.ts";
+import { getCategory, type SimplifiedMcdocField, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import { getDefault, simplifyType } from "@/services/McdocHelpers.ts";
 
 type StructType = Extract<SimplifiedMcdocType, { kind: "struct" }>;
 
@@ -22,7 +23,7 @@ export function StructBody({ type: outerType, node, ctx }: NodeProps<StructType>
     const staticFields = type.fields.filter((field) => field.key.kind === "literal");
 
     return (
-        <div className="struct-body">
+        <>
             {staticFields.map((field) => {
                 const key = (field.key as LiteralType).value.value.toString();
                 const index = node.children.findIndex((p) => p.key?.value === key);
@@ -40,7 +41,7 @@ export function StructBody({ type: outerType, node, ctx }: NodeProps<StructType>
                     />
                 );
             })}
-        </div>
+        </>
     );
 }
 
@@ -58,6 +59,7 @@ interface StaticFieldProps {
 function StaticField({ pair, index, field, fieldKey, staticFields, node, ctx }: StaticFieldProps): React.ReactNode {
     const child = pair?.value;
     const childType = simplifyType(field.type, ctx, { key: pair?.key, parent: node });
+    const category = getCategory(field.type);
 
     // Misode: McdocRenderer.tsx:577-628
     const makeFieldEdit: MakeEdit = (edit) => {
@@ -118,11 +120,11 @@ function StaticField({ pair, index, field, fieldKey, staticFields, node, ctx }: 
     };
 
     return (
-        <div className="struct-field">
-            <div className="field-header">
-                <span className="field-key">{formatIdentifier(fieldKey)}</span>
+        <div className="node" data-category={category}>
+            <div className="node-header">
+                <Key label={fieldKey} doc={field.desc} />
                 {!pair && field.optional && (
-                    <button type="button" className="add-field" onClick={handleAdd}>
+                    <button type="button" className="add" onClick={handleAdd}>
                         +
                     </button>
                 )}

@@ -30,8 +30,9 @@ export function EnumHead({ type, node, ctx }: NodeProps<EnumType>): React.ReactN
         });
     };
 
+    // Misode: direct <select> in node-header
     return (
-        <select className="enum-select" value={value ?? ""} onChange={handleChange}>
+        <select value={value ?? ""} onChange={handleChange}>
             <option value="">Select...</option>
             {type.values.map((enumValue) => (
                 <option key={String(enumValue.value)} value={String(enumValue.value)}>

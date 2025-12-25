@@ -6,7 +6,7 @@
     "scripts": {
         "build": "pnpm -r build",
         "dev": "pnpm -r --parallel dev",
-        "lint": "pnpm -r lint",I started integrating misode into VSC, but there's no CSS, which is why it looks really bad, but it seems to be working. Thanks anyway.
+        "lint": "pnpm -r lint",
         "biome:check": "pnpm -r biome:check",
         "biome:format": "pnpm -r biome:format",
         "biome:unsafefix": "pnpm -r biome:unsafefix"

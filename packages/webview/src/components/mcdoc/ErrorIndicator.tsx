@@ -1,3 +1,5 @@
+import { Octicon } from "@/components/Icons.tsx";
+
 interface ErrorIndicatorProps {
     message: string;
 }
@@ -5,7 +7,7 @@ interface ErrorIndicatorProps {
 export function ErrorIndicator({ message }: ErrorIndicatorProps): React.ReactNode {
     return (
         <div className="error-indicator">
-            <span>!</span>
+            {Octicon.warning}
             <div className="error-tooltip">{message}</div>
         </div>
     );

@@ -2,9 +2,9 @@ import { Range, Source, string } from "@spyglassmc/core";
 import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import { getValues } from "@spyglassmc/mcdoc/lib/runtime/completer/index.js";
-import { useId } from "react";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import { formatIdentifier, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import { Autocomplete } from "@/components/Autocomplete.tsx";
 
 type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;
 
@@ -12,7 +12,6 @@ type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;
 export function StringHead({ type, node, ctx, optional, excludeStrings }: NodeProps<StringType>): React.ReactNode {
     const stringNode = JsonStringNode.is(node) ? node : undefined;
     const nodeValue = stringNode?.value ?? "";
-    const datalistId = useId();
 
     // Misode: McdocRenderer.tsx:189-195
     const completions = getCompletions(type, stringNode, ctx, excludeStrings);
@@ -38,23 +37,12 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
         );
     }
 
-    return (
-        <>
-            {completions.length > 0 && (
-                <datalist id={datalistId}>
-                    {completions.map((c) => (
-                        <option key={c.value} value={c.value} />
-                    ))}
-                </datalist>
-            )}
-            <input
-                type="text"
-                value={nodeValue}
-                onChange={(e) => handleChange(e.target.value)}
-                list={completions.length > 0 ? datalistId : undefined}
-            />
-        </>
-    );
+    if (completions.length > 0) {
+        const options = completions.map((c) => ({ value: c.value }));
+        return <Autocomplete value={nodeValue} options={options} onChange={handleChange} />;
+    }
+
+    return <input type="text" value={nodeValue} onChange={(e) => handleChange(e.target.value)} />;
 }
 
 // Misode: McdocRenderer.tsx:189-195

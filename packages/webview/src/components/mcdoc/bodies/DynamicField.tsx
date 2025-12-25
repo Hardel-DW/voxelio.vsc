@@ -1,5 +1,6 @@
 import { Range } from "@spyglassmc/core";
 import type { JsonObjectNode, JsonPairNode } from "@spyglassmc/json";
+import { Octicon } from "@/components/Icons.tsx";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
@@ -46,7 +47,7 @@ export function DynamicField({ pair, index, field, fieldKey, node, ctx }: Dynami
         <div className="node" data-category={category}>
             <div className="node-header">
                 <button type="button" className="remove" onClick={handleRemove}>
-                    🗑
+                    {Octicon.trashcan}
                 </button>
                 <Key label={fieldKey} raw />
                 <Head type={childType} node={child} ctx={fieldCtx} />

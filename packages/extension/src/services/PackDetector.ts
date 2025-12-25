@@ -12,48 +12,6 @@ interface PackMcmeta {
     };
 }
 
-// Categories that can contain resources in a datapack
-const DATAPACK_CATEGORIES = [
-    "advancement",
-    "chat_type",
-    "damage_type",
-    "dimension",
-    "dimension_type",
-    "enchantment",
-    "enchantment_provider",
-    "function",
-    "item_modifier",
-    "jukebox_song",
-    "loot_table",
-    "painting_variant",
-    "predicate",
-    "recipe",
-    "structure",
-    "trim_material",
-    "trim_pattern",
-    "wolf_variant",
-    "worldgen/biome",
-    "worldgen/configured_carver",
-    "worldgen/configured_feature",
-    "worldgen/density_function",
-    "worldgen/flat_level_generator_preset",
-    "worldgen/multi_noise_biome_source_parameter_list",
-    "worldgen/noise",
-    "worldgen/noise_settings",
-    "worldgen/placed_feature",
-    "worldgen/processor_list",
-    "worldgen/structure",
-    "worldgen/structure_set",
-    "worldgen/template_pool",
-    "worldgen/world_preset",
-    "tags/block",
-    "tags/entity_type",
-    "tags/fluid",
-    "tags/function",
-    "tags/game_event",
-    "tags/item"
-];
-
 export class PackDetector {
     async detect(): Promise<PackInfo | null> {
         const files = await vscode.workspace.findFiles("pack.mcmeta", null, 1);
@@ -75,15 +33,31 @@ export class PackDetector {
 
     async scanWorkspaceRegistries(): Promise<RegistriesPayload> {
         const registries: MutableRegistries = {};
-        const dataFiles = await vscode.workspace.findFiles("data/**/*.json");
 
-        for (const file of dataFiles) {
-            const parsed = this.parseDatapackPath(file.fsPath);
+        // Scan JSON files and mcfunction files
+        const [jsonFiles, mcfunctionFiles] = await Promise.all([
+            vscode.workspace.findFiles("data/**/*.json"),
+            vscode.workspace.findFiles("data/**/function/**/*.mcfunction")
+        ]);
+
+        for (const file of jsonFiles) {
+            const parsed = this.parseDatapackPath(file.fsPath, ".json");
             if (!parsed) continue;
 
-            const { namespace, category, resourcePath } = parsed;
-            const resourceId = `${namespace}:${resourcePath}`;
+            const { category, resourceId } = parsed;
+            if (!registries[category]) {
+                registries[category] = [];
+            }
+            if (!registries[category].includes(resourceId)) {
+                registries[category].push(resourceId);
+            }
+        }
 
+        for (const file of mcfunctionFiles) {
+            const parsed = this.parseDatapackPath(file.fsPath, ".mcfunction");
+            if (!parsed) continue;
+
+            const { category, resourceId } = parsed;
             if (!registries[category]) {
                 registries[category] = [];
             }
@@ -100,27 +74,39 @@ export class PackDetector {
         return registries;
     }
 
-    private parseDatapackPath(fsPath: string): { namespace: string; category: string; resourcePath: string } | null {
-        // Normalize path separators
+    private parseDatapackPath(fsPath: string, ext: string): { category: string; resourceId: string } | null {
         const normalizedPath = fsPath.replace(/\\/g, "/");
 
-        // Match: data/{namespace}/{category}/{...path}.json
-        const match = normalizedPath.match(/data\/([^/]+)\/([^/]+(?:\/[^/]+)?)\/(.+)\.json$/);
+        // Match: data/{namespace}/{...rest}
+        const extEscaped = ext.replace(".", "\\.");
+        const regex = new RegExp(`data/([^/]+)/(.+)${extEscaped}$`);
+        const match = normalizedPath.match(regex);
         if (!match) return null;
 
-        const [, namespace, categoryPath, resourcePath] = match;
+        const [, namespace, restPath] = match;
+        const parts = restPath.split("/");
 
-        // Find matching category (handles nested categories like worldgen/biome, tags/block)
-        const category = DATAPACK_CATEGORIES.find((c) => categoryPath === c || categoryPath.startsWith(`${c}/`)) ?? categoryPath;
+        if (parts.length < 2) return null;
 
-        // Adjust resource path for nested categories
-        let finalResourcePath = resourcePath;
-        if (categoryPath !== category && categoryPath.startsWith(`${category}/`)) {
-            const subPath = categoryPath.slice(category.length + 1);
-            finalResourcePath = `${subPath}/${resourcePath}`;
+        // Determine category and resource path based on structure
+        let category: string;
+        let resourcePath: string;
+
+        if (parts[0] === "tags" && parts.length >= 3) {
+            // tags/{type}/{...path} → category: tag/{type}
+            category = `tag/${parts[1]}`;
+            resourcePath = parts.slice(2).join("/");
+        } else if (parts[0] === "worldgen" && parts.length >= 3) {
+            // worldgen/{type}/{...path} → category: worldgen/{type}
+            category = `worldgen/${parts[1]}`;
+            resourcePath = parts.slice(2).join("/");
+        } else {
+            // {category}/{...path}
+            category = parts[0];
+            resourcePath = parts.slice(1).join("/");
         }
 
-        return { namespace, category, resourcePath: finalResourcePath };
+        return { category, resourceId: `${namespace}:${resourcePath}` };
     }
 
     private extractPackFormat(content: PackMcmeta | null): number | null {

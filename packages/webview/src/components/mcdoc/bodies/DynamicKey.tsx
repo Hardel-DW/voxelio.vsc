@@ -3,6 +3,7 @@ import type { JsonPairNode } from "@spyglassmc/json";
 import { type JsonObjectNode, JsonStringNode } from "@spyglassmc/json";
 import type { McdocType } from "@spyglassmc/mcdoc";
 import { useState } from "react";
+import { Octicon } from "@/components/Icons.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
 import { getDefault, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
@@ -39,7 +40,7 @@ export function DynamicKey({ keyType, valueType, parent, ctx }: DynamicKeyProps)
         <>
             <Head type={keyType} optional excludeStrings={excludeStrings} node={keyNode} ctx={keyCtx} />
             <button type="button" className="add" onClick={handleAdd} disabled={isDisabled}>
-                +
+                {Octicon.plus}
             </button>
         </>
     );

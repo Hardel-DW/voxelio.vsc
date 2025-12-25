@@ -1,22 +1,28 @@
 import type { ItemNode } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
+import { Octicon } from "@/components/Icons.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { getDefault, getItemType, simplifyType } from "@/services/McdocHelpers.ts";
 
 type ListType = Extract<SimplifiedMcdocType, { kind: "list" | "byte_array" | "int_array" | "long_array" | "tuple" }>;
 
-// Misode: McdocRenderer.tsx:793-831
-export function ListHead({ type, node, ctx }: NodeProps<ListType>): React.ReactNode {
+// Misode: McdocRenderer.tsx:795-831
+export function ListHead({ type, node, ctx, optional }: NodeProps<ListType>): React.ReactNode {
     const arrayNode = JsonArrayNode.is(node) ? node : undefined;
     const itemCount = arrayNode?.children?.length ?? 0;
+
+    // Misode: ListHead only shows "+" button, count is shown separately
+    // Don't show if node doesn't exist and field is optional (StaticField shows its own + button)
+    if (!arrayNode && optional) {
+        return null;
+    }
 
     const handleAdd = (): void => {
         ctx.makeEdit((range) => {
             const itemType = simplifyType(getItemType(type), ctx);
             const newValue = getDefault(itemType, range, ctx);
-            // Misode: wraps value in ItemNode
             const newItem: ItemNode<JsonNode> = {
                 type: "item",
                 range,
@@ -26,8 +32,7 @@ export function ListHead({ type, node, ctx }: NodeProps<ListType>): React.ReactN
             newValue.parent = newItem;
 
             if (arrayNode) {
-                // Misode: mutate directly then return parent
-                arrayNode.children.push(newItem);
+                arrayNode.children.unshift(newItem);
                 newItem.parent = arrayNode;
                 return arrayNode;
             }
@@ -42,10 +47,9 @@ export function ListHead({ type, node, ctx }: NodeProps<ListType>): React.ReactN
         });
     };
 
-    // Misode: uses <button class="add"> for adding items
     return (
         <button type="button" className="add" onClick={handleAdd}>
-            + Add ({itemCount})
+            {Octicon.plus}
         </button>
     );
 }

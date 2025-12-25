@@ -2,6 +2,7 @@ import { Range } from "@spyglassmc/core";
 import type { JsonObjectNode, JsonPairNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { LiteralType } from "@spyglassmc/mcdoc";
+import { Octicon } from "@/components/Icons.tsx";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { ErrorIndicator } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
@@ -40,7 +41,7 @@ export function StaticField({ pair, index, field, fieldKey, staticFields, node, 
                 <Key label={fieldKey} doc={field.desc} />
                 {!pair && field.optional && (
                     <button type="button" className="add" onClick={handleAdd}>
-                        +
+                        {Octicon.plus}
                     </button>
                 )}
                 <Head type={childType} node={child} optional={field.optional} ctx={fieldCtx} />

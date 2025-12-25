@@ -4,11 +4,12 @@ import { JsonFileView } from "@/components/JsonFileView.tsx";
 import { postMessage } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
-import type { ExtensionMessage, VersionConfig } from "@/types.ts";
+import type { ExtensionMessage, RegistriesPayload, VersionConfig } from "@/types.ts";
 
 interface AppState {
     packFormat: number | null;
     version: VersionConfig | null;
+    registries: RegistriesPayload | null;
     service: SpyglassService | null;
     docAndNode: DocAndNode | null;
     virtualUri: string | null;
@@ -20,6 +21,7 @@ interface AppState {
 const initialState: AppState = {
     packFormat: null,
     version: null,
+    registries: null,
     service: null,
     docAndNode: null,
     virtualUri: null,
@@ -52,10 +54,25 @@ function extractDatapackPath(uri: string): string | null {
 }
 
 async function handleInit(packFormat: number, version: VersionConfig): Promise<void> {
-    setState({ packFormat, version, loading: true });
+    setState({ packFormat, version });
+    tryCreateService();
+}
+
+function handleRegistries(registries: RegistriesPayload): void {
+    setState({ registries });
+    tryCreateService();
+}
+
+async function tryCreateService(): Promise<void> {
+    const { version, registries, service, loading } = state;
+
+    // Wait until we have version and registries, and service isn't already being created
+    if (!version || !registries || service || loading) return;
+
+    setState({ loading: true });
     try {
-        const service = await SpyglassServiceClass.create(version);
-        setState({ service, loading: false });
+        const newService = await SpyglassServiceClass.create(version, registries);
+        setState({ service: newService, loading: false });
     } catch (err) {
         setState({ error: err instanceof Error ? err.message : "Failed to init", loading: false });
     }
@@ -108,6 +125,9 @@ function handleMessage(event: MessageEvent<ExtensionMessage>): void {
                 setState({ packFormat: msg.payload.packFormat, error: msg.payload.error ?? null });
             }
             break;
+        case "registries":
+            handleRegistries(msg.payload);
+            break;
         case "file":
             handleFile(msg.payload.uri, msg.payload.content);
             break;
@@ -129,7 +149,7 @@ export function App(): React.ReactNode {
         return true;
     });
 
-    const { packFormat, version, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
+    const { packFormat, version, registries, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
 
     if (error) {
         return <div className="error-message">Error: {error}</div>;
@@ -141,6 +161,10 @@ export function App(): React.ReactNode {
 
     if (!packFormat || !version) {
         return <div className="loading-message">Waiting for pack info...</div>;
+    }
+
+    if (!registries) {
+        return <div className="loading-message">Loading registries...</div>;
     }
 
     if (!service) {

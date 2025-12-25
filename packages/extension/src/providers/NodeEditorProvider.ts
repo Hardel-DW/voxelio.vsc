@@ -1,13 +1,15 @@
 import * as vscode from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
+import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
-import type { ExtensionMessage, PackInfo, WebviewMessage } from "@/types.ts";
+import type { ExtensionMessage, MutableRegistries, PackInfo, RegistriesPayload, WebviewMessage } from "@/types.ts";
 
 export class NodeEditorProvider implements vscode.WebviewViewProvider {
     static readonly viewType = "voxelio.nodeEditor";
 
     private view?: vscode.WebviewView;
     private readonly cacheService: CacheService;
+    private readonly packDetector: PackDetector;
     private readonly disposables: vscode.Disposable[] = [];
     private currentFileUri?: string;
 
@@ -16,6 +18,7 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
         private readonly packInfo: PackInfo
     ) {
         this.cacheService = new CacheService(context);
+        this.packDetector = new PackDetector();
     }
 
     resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -44,11 +47,40 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
         this.sendMessage({ type: "init", payload: { packFormat: this.packInfo.packFormat, version } });
 
         try {
-            const registries = await this.cacheService.getRegistries(version);
-            this.sendMessage({ type: "registries", payload: Object.fromEntries(registries) });
+            const [vanillaRegistries, workspaceRegistries] = await Promise.all([
+                this.cacheService.getRegistries(version),
+                this.packDetector.scanWorkspaceRegistries()
+            ]);
+
+            const mergedRegistries = this.mergeRegistries(vanillaRegistries, workspaceRegistries);
+            this.sendMessage({ type: "registries", payload: mergedRegistries });
         } catch (error) {
             console.error("Failed to load registries:", error);
         }
+    }
+
+    private mergeRegistries(vanilla: Map<string, string[]>, workspace: RegistriesPayload): RegistriesPayload {
+        const merged: MutableRegistries = {};
+
+        // Add vanilla registries
+        for (const [category, entries] of vanilla) {
+            merged[category] = [...entries];
+        }
+
+        // Merge workspace registries
+        for (const [category, entries] of Object.entries(workspace)) {
+            if (!merged[category]) {
+                merged[category] = [];
+            }
+            for (const entry of entries) {
+                if (!merged[category].includes(entry)) {
+                    merged[category].push(entry);
+                }
+            }
+            merged[category].sort();
+        }
+
+        return merged;
     }
 
     focus(): void {

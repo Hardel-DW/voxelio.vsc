@@ -17,8 +17,7 @@
         "@spyglassmc/mcdoc": "^0.3.43",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
-        "vscode-languageserver-textdocument": "^1.0.12",
-        "zustand": "^5.0.9"
+        "vscode-languageserver-textdocument": "^1.0.12"
     },
     "devDependencies": {
         "@types/react": "^19.2.7",

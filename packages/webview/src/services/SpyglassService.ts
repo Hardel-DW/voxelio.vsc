@@ -14,6 +14,7 @@ import {
     VanillaConfig
 } from "@spyglassmc/core";
 import { BrowserExternals } from "@spyglassmc/core/lib/browser.js";
+import { uriBinder } from "@spyglassmc/java-edition/lib/binder/index.js";
 import type { McmetaStates, McmetaSummary } from "@spyglassmc/java-edition/lib/dependency/index.js";
 import { Fluids, ReleaseVersion, symbolRegistrar } from "@spyglassmc/java-edition/lib/dependency/index.js";
 import { initialize } from "@spyglassmc/java-edition/lib/json/index.js";
@@ -173,7 +174,7 @@ export class SpyglassService {
         await this.service.project.ensureClientManagedChecked(doc.uri);
     }
 
-    static async create(version: VersionConfig): Promise<SpyglassService> {
+    static async create(version: VersionConfig, customRegistries?: Record<string, string[]>): Promise<SpyglassService> {
         const fs = new MemoryFileSystem();
         const externals: Externals = { ...BrowserExternals, fs };
 
@@ -193,7 +194,7 @@ export class SpyglassService {
                         dependencies: []
                     }
                 }),
-                initializers: [mcdocInitialize, createInitializer(version)]
+                initializers: [mcdocInitialize, createInitializer(version, customRegistries)]
             }
         });
 
@@ -202,7 +203,7 @@ export class SpyglassService {
     }
 }
 
-function createInitializer(version: VersionConfig): ProjectInitializer {
+function createInitializer(version: VersionConfig, customRegistries?: Record<string, string[]>): ProjectInitializer {
     return async (ctx) => {
         const { meta } = ctx;
 
@@ -212,12 +213,15 @@ function createInitializer(version: VersionConfig): ProjectInitializer {
             registrar: createMcdocRegistrar(vanillaMcdoc)
         });
 
-        const registries = await fetchRegistries(version);
+        const vanillaRegistries = await fetchRegistries(version);
         const blocks = await fetchBlockStates(version);
         const versions = await fetchVersions();
 
+        // Merge vanilla registries with custom (workspace) registries
+        const mergedRegistries = mergeRegistries(vanillaRegistries, customRegistries);
+
         const summary: McmetaSummary = {
-            registries: Object.fromEntries(registries),
+            registries: Object.fromEntries(mergedRegistries),
             blocks: Object.fromEntries(blocks) as McmetaStates,
             fluids: Fluids,
             commands: { type: "root", children: {} }
@@ -230,11 +234,34 @@ function createInitializer(version: VersionConfig): ProjectInitializer {
 
         registerAttributes(meta, version.ref as ReleaseVersion, versions);
 
+        meta.registerUriBinder(uriBinder);
+
         getInitializer()(ctx);
         initialize(ctx);
 
         return { loadedVersion: version.ref };
     };
+}
+
+function mergeRegistries(vanilla: Map<string, string[]>, custom?: Record<string, string[]>): Map<string, string[]> {
+    if (!custom) return vanilla;
+
+    const merged = new Map(vanilla);
+
+    for (const [category, entries] of Object.entries(custom)) {
+        const existing = merged.get(category) ?? [];
+        const combined = [...existing];
+
+        for (const entry of entries) {
+            if (!combined.includes(entry)) {
+                combined.push(entry);
+            }
+        }
+
+        merged.set(category, combined.sort());
+    }
+
+    return merged;
 }
 
 function createMcdocRegistrar(symbols: VanillaMcdocSymbols): SymbolRegistrar {

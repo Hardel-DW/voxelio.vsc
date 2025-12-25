@@ -7,6 +7,7 @@ export interface NodeProps<T extends SimplifiedMcdocType = SimplifiedMcdocType> 
     node: JsonNode | undefined;
     ctx: McdocContext;
     optional?: boolean;
+    excludeStrings?: string[];
 }
 
 export type NodePropsNoUnion = NodeProps<SimplifiedMcdocTypeNoUnion>;

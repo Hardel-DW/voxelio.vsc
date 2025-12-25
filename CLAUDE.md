@@ -36,14 +36,11 @@ Float16Array
 
 **Webview (webview/):**
 - `react`, `react-dom` ^19.2.3
-- `zustand` ^5.0.9
-- `tailwind-merge` ^3.4.0
 - `@spyglassmc/core` ^0.4.42
 - `@spyglassmc/mcdoc` ^0.3.43
 - `@spyglassmc/json` ^0.3.46
 - `@spyglassmc/java-edition` ^0.3.54
 - `vite` 8.x + `@vitejs/plugin-react`
-- `tailwindcss` ^4.x
 
 ## Development Commands
 - **Dev server**: `npm run dev` - Start Vite development server

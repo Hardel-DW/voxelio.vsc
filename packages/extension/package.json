@@ -27,6 +27,7 @@
         "views": {
             "voxelio": [
                 {
+                    "icon": "resources/icon.png",
                     "type": "webview",
                     "id": "voxelio.nodeEditor",
                     "name": "Node Editor"

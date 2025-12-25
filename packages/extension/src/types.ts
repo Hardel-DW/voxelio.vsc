@@ -19,7 +19,11 @@ export interface InitPayload {
 }
 
 export interface RegistriesPayload {
-    readonly [registry: string]: string[];
+    readonly [registry: string]: readonly string[];
+}
+
+export interface MutableRegistries {
+    [registry: string]: string[];
 }
 
 export interface FilePayload {

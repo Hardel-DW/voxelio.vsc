@@ -1,42 +1,159 @@
+import type { DocAndNode } from "@spyglassmc/core";
+import { useState, useSyncExternalStore } from "react";
 import { JsonFileView } from "@/components/JsonFileView.tsx";
-import { useExtensionMessages } from "@/hooks/useExtensionMessages.ts";
-import { useEditorStore } from "@/stores/editor.ts";
-import { useFileStore } from "@/stores/file.ts";
-import { useSpyglassStore } from "@/stores/spyglass.ts";
+import { postMessage } from "@/lib/vscode.ts";
+import type { SpyglassService } from "@/services/SpyglassService.ts";
+import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
+import type { ExtensionMessage, VersionConfig } from "@/types.ts";
+
+interface AppState {
+    packFormat: number | null;
+    version: VersionConfig | null;
+    service: SpyglassService | null;
+    docAndNode: DocAndNode | null;
+    virtualUri: string | null;
+    realUri: string | null;
+    loading: boolean;
+    error: string | null;
+}
+
+const initialState: AppState = {
+    packFormat: null,
+    version: null,
+    service: null,
+    docAndNode: null,
+    virtualUri: null,
+    realUri: null,
+    loading: false,
+    error: null
+};
+
+let state = initialState;
+const listeners = new Set<() => void>();
+
+function setState(partial: Partial<AppState>): void {
+    state = { ...state, ...partial };
+    for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void): () => void {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+}
+
+function getSnapshot(): AppState {
+    return state;
+}
+
+function extractDatapackPath(uri: string): string | null {
+    const match = uri.match(/[/\\](data[/\\].+\.json)$/i);
+    if (!match) return null;
+    return match[1].replace(/\\/g, "/");
+}
+
+async function handleInit(packFormat: number, version: VersionConfig): Promise<void> {
+    setState({ packFormat, version, loading: true });
+    try {
+        const service = await SpyglassServiceClass.create(version);
+        setState({ service, loading: false });
+    } catch (err) {
+        setState({ error: err instanceof Error ? err.message : "Failed to init", loading: false });
+    }
+}
+
+async function handleFile(realUri: string, content: string): Promise<void> {
+    const { service, virtualUri: oldVirtualUri } = state;
+    if (!service) return;
+
+    const datapackPath = extractDatapackPath(realUri);
+    if (!datapackPath) return;
+
+    const virtualUri = `file:///root/${datapackPath}`;
+
+    // Unwatch previous file
+    if (oldVirtualUri && oldVirtualUri !== virtualUri) {
+        service.unwatchFile(oldVirtualUri, onDocumentUpdated);
+    }
+
+    await service.writeFile(virtualUri, content);
+    const docAndNode = await service.openFile(virtualUri);
+
+    if (docAndNode) {
+        setState({ docAndNode, virtualUri, realUri });
+        service.watchFile(virtualUri, onDocumentUpdated);
+    }
+}
+
+function onDocumentUpdated(docAndNode: DocAndNode): void {
+    setState({ docAndNode });
+
+    // Send updated content back to VS Code
+    const { realUri, service, virtualUri } = state;
+    if (realUri && service && virtualUri) {
+        service.readFile(virtualUri).then((content) => {
+            if (content) {
+                postMessage({ type: "saveFile", uri: realUri, content });
+            }
+        });
+    }
+}
+
+function handleMessage(event: MessageEvent<ExtensionMessage>): void {
+    const msg = event.data;
+    switch (msg.type) {
+        case "init":
+            if (msg.payload.version) {
+                handleInit(msg.payload.packFormat, msg.payload.version);
+            } else {
+                setState({ packFormat: msg.payload.packFormat, error: msg.payload.error ?? null });
+            }
+            break;
+        case "file":
+            handleFile(msg.payload.uri, msg.payload.content);
+            break;
+    }
+}
+
+let initialized = false;
+
+function initMessageListener(): void {
+    if (initialized) return;
+    initialized = true;
+    window.addEventListener("message", handleMessage);
+    postMessage({ type: "ready" });
+}
 
 export function App(): React.ReactNode {
-    useExtensionMessages();
+    useState(() => {
+        initMessageListener();
+        return true;
+    });
 
-    const packFormat = useEditorStore((s) => s.packFormat);
-    const version = useEditorStore((s) => s.version);
-    const loading = useSpyglassStore((s) => s.loading);
-    const error = useSpyglassStore((s) => s.error);
-    const service = useSpyglassStore((s) => s.service);
-    const docAndNode = useFileStore((s) => s.docAndNode);
+    const { packFormat, version, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
 
     if (error) {
-        return <div className="p-4 text-red-400">Error: {error}</div>;
+        return <div className="error-message">Error: {error}</div>;
     }
 
     if (loading) {
-        return <div className="p-4 text-gray-400">Loading Spyglass...</div>;
+        return <div className="loading-message">Loading Spyglass...</div>;
     }
 
     if (!packFormat || !version) {
-        return <div className="p-4 text-gray-400">Waiting for pack info...</div>;
+        return <div className="loading-message">Waiting for pack info...</div>;
     }
 
     if (!service) {
-        return <div className="p-4 text-gray-400">Initializing Spyglass...</div>;
+        return <div className="loading-message">Initializing Spyglass...</div>;
     }
 
     if (!docAndNode) {
         return (
-            <div className="flex flex-col gap-2 p-4">
-                <div className="text-sm text-gray-300">
+            <div className="info-panel">
+                <div>
                     Pack Format: {packFormat} | Version: {version.id}
                 </div>
-                <div className="text-xs text-gray-500">Open a JSON file in the data folder to start editing.</div>
+                <div className="hint">Open a JSON file in the data folder to start editing.</div>
             </div>
         );
     }

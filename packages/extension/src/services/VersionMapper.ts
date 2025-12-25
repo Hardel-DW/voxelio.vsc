@@ -20,7 +20,7 @@ const VERSION_MAP: ReadonlyMap<number, VersionConfig> = new Map([
     [61, { id: "1.21.4", ref: "1.21.4" }],
     [71, { id: "1.21.5", ref: "1.21.5" }],
     [82, { id: "1.21.7", ref: "1.21.7" }],
-    [94, { id: "1.21.11", ref: "1.21.11" }],
+    [94, { id: "1.21.11", ref: "1.21.11" }]
 ]);
 
 export function getVersionFromPackFormat(packFormat: number): VersionConfig | null {

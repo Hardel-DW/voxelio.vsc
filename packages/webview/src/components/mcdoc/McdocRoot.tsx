@@ -3,9 +3,9 @@ import { JsonObjectNode } from "@spyglassmc/json";
 import type { McdocContext } from "@/services/McdocContext.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { Body } from "./Body.tsx";
+import { StructBody } from "./bodies/StructBody.tsx";
 import { Head } from "./Head.tsx";
 import { Key } from "./Key.tsx";
-import { StructBody } from "./bodies/StructBody.tsx";
 
 interface McdocRootProps {
     type: SimplifiedMcdocType;

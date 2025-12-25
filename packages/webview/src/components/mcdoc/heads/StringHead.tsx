@@ -25,6 +25,5 @@ export function StringHead({ node, ctx, optional }: NodeProps<StringType>): Reac
         });
     };
 
-    // Misode: direct <input> in node-header, no wrapper
     return <input type="text" value={nodeValue} onChange={handleChange} />;
 }

@@ -4,12 +4,12 @@ import { JsonObjectNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { LiteralType } from "@spyglassmc/mcdoc";
 import { Body } from "@/components/mcdoc/Body.tsx";
+import { ErrorIndicator } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import { getCategory, type SimplifiedMcdocField, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
-import { getDefault, simplifyType } from "@/services/McdocHelpers.ts";
+import { getCategory, getDefault, type SimplifiedMcdocField, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
 
 type StructType = Extract<SimplifiedMcdocType, { kind: "struct" }>;
 
@@ -119,18 +119,21 @@ function StaticField({ pair, index, field, fieldKey, staticFields, node, ctx }: 
         makeFieldEdit((range) => getDefault(childType, range, ctx));
     };
 
+    const isMissingRequired = !field.optional && child === undefined;
+
     return (
         <div className="node" data-category={category}>
             <div className="node-header">
+                {isMissingRequired && <ErrorIndicator message={`Missing required key "${fieldKey}"`} />}
                 <Key label={fieldKey} doc={field.desc} />
                 {!pair && field.optional && (
                     <button type="button" className="add" onClick={handleAdd}>
                         +
                     </button>
                 )}
-                {pair && <Head type={childType} node={child} optional={field.optional} ctx={fieldCtx} />}
+                <Head type={childType} node={child} optional={field.optional} ctx={fieldCtx} />
             </div>
-            {pair && <Body type={childType} node={child} optional={field.optional} ctx={fieldCtx} />}
+            <Body type={childType} node={child} optional={field.optional} ctx={fieldCtx} />
         </div>
     );
 }

@@ -358,14 +358,14 @@ class MemoryFsWatcher implements FsWatcher {
         return this;
     }
 
-    async close(): Promise<void> { }
+    async close(): Promise<void> {}
 }
 
 class MemoryFileSystem implements ExternalFileSystem {
     private readonly files = new Map<string, Uint8Array<ArrayBuffer>>();
     private readonly dirs = new Set<string>();
 
-    async chmod(): Promise<void> { }
+    async chmod(): Promise<void> {}
 
     async mkdir(location: FsLocation): Promise<void> {
         this.dirs.add(String(location));
@@ -394,7 +394,7 @@ class MemoryFileSystem implements ExternalFileSystem {
         return content;
     }
 
-    async showFile(): Promise<void> { }
+    async showFile(): Promise<void> {}
 
     async stat(location: FsLocation): Promise<{ isFile(): boolean; isDirectory(): boolean }> {
         const uriStr = String(location);

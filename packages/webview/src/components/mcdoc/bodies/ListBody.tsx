@@ -6,8 +6,7 @@ import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import { getCategory, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
-import { getItemType, simplifyType } from "@/services/McdocHelpers.ts";
+import { getCategory, getItemType, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
 
 type ListType = Extract<SimplifiedMcdocType, { kind: "list" | "byte_array" | "int_array" | "long_array" | "tuple" }>;
 

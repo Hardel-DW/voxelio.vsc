@@ -44,11 +44,15 @@ function createMcdocContext(docAndNode: DocAndNode, service: SpyglassService): M
     const checkerCtx = service.getCheckerContext(docAndNode.doc, errors);
 
     const makeEdit = (edit: (range: Range) => JsonNode | undefined): void => {
+        console.log("[JsonFileView] makeEdit called, uri:", docAndNode.doc.uri);
         service.applyEdit(docAndNode.doc.uri, (fileNode) => {
+            console.log("[JsonFileView] applyEdit callback, fileNode children:", fileNode.children.length);
             const jsonFileNode = fileNode.children[0];
             if (JsonFileNode.is(jsonFileNode)) {
                 const original = jsonFileNode.children[0] as JsonNode;
+                console.log("[JsonFileView] original range:", original.range);
                 const newNode = edit(original.range);
+                console.log("[JsonFileView] newNode:", newNode);
                 if (newNode !== undefined) {
                     newNode.parent = fileNode;
                     fileNode.children[0] = newNode;

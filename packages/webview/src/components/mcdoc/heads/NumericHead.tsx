@@ -6,17 +6,18 @@ import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 type NumericType = Extract<SimplifiedMcdocType, { kind: "byte" | "short" | "int" | "long" | "float" | "double" }>;
 
 // Misode: McdocRenderer.tsx:294-359
-export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): React.ReactNode {
+export function NumericHead({ node, ctx, optional }: NodeProps<NumericType>): React.ReactNode {
     const nodeValue = node && JsonNumberNode.is(node) ? Number(node.value.value) : undefined;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const value = e.target.value;
         const number = value.length === 0 ? undefined : Number(value);
         if (number !== undefined && Number.isNaN(number)) return;
+        if (number === nodeValue) return;
 
         ctx.makeEdit((range) => {
             if (number === undefined) {
-                return undefined;
+                return optional ? undefined : undefined;
             }
             const newValue: FloatNode | LongNode = Number.isInteger(number)
                 ? { type: "long", range, value: BigInt(number) }
@@ -32,6 +33,5 @@ export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): React.
         });
     };
 
-    // Misode: uses class="short-input" for numeric inputs
     return <input className="short-input" type="number" value={nodeValue ?? ""} onChange={handleChange} />;
 }

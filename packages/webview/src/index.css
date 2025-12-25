@@ -312,3 +312,96 @@ button.move:disabled {
     background-color: var(--category-pool-background);
     border-color: var(--category-pool-border);
 }
+
+/* Node key (label replacement) */
+.node-key {
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 9px;
+    line-height: 1.94rem;
+    white-space: nowrap;
+    user-select: none;
+    background-color: var(--node-background-label);
+    border: 1px solid var(--node-border);
+    color: var(--node-text);
+}
+
+.node-key.has-doc {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: var(--node-text-dimmed);
+    cursor: help;
+}
+
+.node-key.has-doc:hover {
+    text-decoration-style: solid;
+}
+
+/* Message styles for loading/error states */
+.loading-message,
+.error-message,
+.info-panel {
+    padding: 16px;
+    font-size: 13px;
+}
+
+.loading-message {
+    color: var(--vscode-descriptionForeground, #b4b4b4);
+}
+
+.error-message {
+    color: var(--vscode-errorForeground, #f48771);
+}
+
+.info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--vscode-foreground);
+}
+
+.info-panel .hint {
+    color: var(--vscode-descriptionForeground, #b4b4b4);
+    font-size: 12px;
+}
+
+/* File view container */
+.file-view {
+    padding: 8px;
+}
+
+/* Error indicator for missing required fields */
+.error-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 34px;
+    color: var(--vscode-errorForeground, #f48771);
+    border: 1px solid var(--node-remove-border);
+    background-color: var(--node-remove);
+    border-radius: 3px 0 0 3px;
+    cursor: help;
+}
+
+.error-indicator:hover .error-tooltip {
+    display: block;
+}
+
+.error-tooltip {
+    display: none;
+    position: absolute;
+    z-index: 100;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--node-text);
+    background-color: var(--node-background-label);
+    border: 1px solid var(--node-remove-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

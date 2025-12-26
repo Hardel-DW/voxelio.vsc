@@ -7,5 +7,16 @@ interface KeyProps {
 }
 
 export function Key({ label, doc, raw }: KeyProps): React.ReactNode {
-    return <span className={doc ? "node-key has-doc" : "node-key"}>{raw ? label : formatIdentifier(label)}</span>;
+    const displayLabel = raw ? label : formatIdentifier(label);
+
+    if (doc) {
+        return (
+            <span className="node-key has-doc">
+                {displayLabel}
+                <div className="node-doc">{doc}</div>
+            </span>
+        );
+    }
+
+    return <span className="node-key">{displayLabel}</span>;
 }

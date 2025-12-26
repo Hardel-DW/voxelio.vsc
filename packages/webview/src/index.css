@@ -148,41 +148,31 @@ button.toggle {
     border-color: var(--node-border);
 }
 
-.node-header > label {
-    align-self: flex-start;
-    line-height: 22px;
-    background-color: var(--node-background-label);
-}
-
-.node-header > label > span {
-    padding: 0 6px;
-    white-space: nowrap;
-    user-select: none;
-    text-decoration-color: var(--node-text-dimmed);
-}
-
-.node-header > label > .item-display {
-    width: 22px;
-    height: 22px;
-}
 
 .node-doc {
+    display: none;
     position: absolute;
+    top: 100%;
+    left: 0;
     font-size: 10px;
     line-height: 1.3;
-    z-index: 10;
-    margin-top: -1px;
-    margin-left: 3px;
+    z-index: 100;
+    margin-top: 4px;
     padding: 4px 6px;
     border-radius: 4px;
     border: 1px solid;
     color: var(--node-text-dimmed);
     border-color: var(--node-border);
     background-color: var(--node-background-label);
-    box-shadow: 0 1px 7px -2px #000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
 }
 
-.node-header > label > span:hover + .node-doc {
+.node-key.has-doc {
+    position: relative;
+}
+
+.node-key.has-doc:hover .node-doc {
     display: block;
 }
 
@@ -356,7 +346,9 @@ button.add {
     background-color: var(--node-add);
     border-color: var(--node-add-border);
     color: var(--node-text);
+    width: 24px;
     min-width: 24px;
+    padding: 0;
 }
 
 button.add:enabled:hover {
@@ -367,7 +359,9 @@ button.remove {
     background-color: var(--node-remove);
     border-color: var(--node-remove-border);
     color: var(--node-text);
+    width: 24px;
     min-width: 24px;
+    padding: 0;
 }
 
 button.remove:enabled:hover {
@@ -403,6 +397,7 @@ button.move {
 button.move svg {
     width: 10px;
     height: 10px;
+    fill: var(--node-text);
 }
 
 button.move + button.move {
@@ -578,15 +573,15 @@ button.move:disabled svg {
 }
 
 /* Color categories */
-[data-category=predicate] > .node-header > label,
+[data-category=predicate] > .node-header > .node-key,
 [data-category=predicate] > .node-header > button.toggle,
-[data-category=predicate] > .node-body > .node > .node-header > label,
-[data-category=predicate] > .node-body-flat > .node > .node-header > label {
+[data-category=predicate] > .node-body > .node > .node-header > .node-key,
+[data-category=predicate] > .node-body-flat > .node > .node-header > .node-key {
     background-color: var(--category-predicate);
 }
 
 [data-category=predicate] > .node-body,
-[data-category=predicate] > .node-header > label,
+[data-category=predicate] > .node-header > .node-key,
 [data-category=predicate] > .node-header > *:not(.selected),
 [data-category=predicate] > .node-body > .node > .node-header > *:not(.selected),
 [data-category=predicate] > .node-body-flat > .node > .node-header > *:not(.selected) {
@@ -599,15 +594,15 @@ button.move:disabled svg {
     border-color: var(--category-predicate-border);
 }
 
-[data-category=function] > .node-header > label,
+[data-category=function] > .node-header > .node-key,
 [data-category=function] > .node-header > button.toggle,
-[data-category=function] > .node-body > .node > .node-header > label,
-[data-category=function] > .node-body-flat > .node > .node-header > label {
+[data-category=function] > .node-body > .node > .node-header > .node-key,
+[data-category=function] > .node-body-flat > .node > .node-header > .node-key {
     background-color: var(--category-function);
 }
 
 [data-category=function] > .node-body,
-[data-category=function] > .node-header > label,
+[data-category=function] > .node-header > .node-key,
 [data-category=function] > .node-header > *:not(.selected),
 [data-category=function] > .node-body > .node > .node-header > *:not(.selected),
 [data-category=function] > .node-body-flat > .node > .node-header > *:not(.selected) {
@@ -620,15 +615,15 @@ button.move:disabled svg {
     border-color: var(--category-function-border);
 }
 
-[data-category=pool] > .node-header > label,
+[data-category=pool] > .node-header > .node-key,
 [data-category=pool] > .node-header > button.toggle,
-[data-category=pool] > .node-body > .node > .node-header > label,
-[data-category=pool] > .node-body-flat > .node > .node-header > label {
+[data-category=pool] > .node-body > .node > .node-header > .node-key,
+[data-category=pool] > .node-body-flat > .node > .node-header > .node-key {
     background-color: var(--category-pool);
 }
 
 [data-category=pool] > .node-body,
-[data-category=pool] > .node-header > label,
+[data-category=pool] > .node-header > .node-key,
 [data-category=pool] > .node-header > *:not(.selected),
 [data-category=pool] > .node-body > .node > .node-header > *:not(.selected),
 [data-category=pool] > .node-body-flat > .node > .node-header > *:not(.selected) {

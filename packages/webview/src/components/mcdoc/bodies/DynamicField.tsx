@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Range } from "@spyglassmc/core";
 import type { JsonObjectNode, JsonPairNode } from "@spyglassmc/json";
 import { Octicon } from "@/components/Icons.tsx";
@@ -6,8 +7,9 @@ import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
 import { getCategory, type SimplifiedMcdocField, simplifyType } from "@/services/McdocHelpers.ts";
+import { StructBody } from "./StructBody.tsx";
 
-// Misode: McdocRenderer.tsx:707-760
+// Misode: McdocRenderer.tsx:707-766
 interface DynamicFieldProps {
     pair: JsonPairNode;
     index: number;
@@ -18,9 +20,11 @@ interface DynamicFieldProps {
 }
 
 export function DynamicField({ pair, index, field, fieldKey, node, ctx }: DynamicFieldProps): React.ReactNode {
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const child = pair.value;
     const childType = simplifyType(field.type, ctx, { key: pair.key, parent: node });
     const category = getCategory(field.type);
+    const canToggle = childType.kind === "struct" || childType.kind === "list" || childType.kind === "union";
 
     const makeFieldEdit: MakeEdit = (edit) => {
         ctx.makeEdit(() => {
@@ -43,16 +47,34 @@ export function DynamicField({ pair, index, field, fieldKey, node, ctx }: Dynami
 
     const fieldCtx: McdocContext = { ...ctx, makeEdit: makeFieldEdit };
 
+    // Misode: McdocRenderer.tsx:760-764 - use node-body-flat for struct with category
+    const renderBody = (): React.ReactNode => {
+        if (isCollapsed) return null;
+        if (childType.kind === "struct" && category) {
+            return (
+                <div className="node-body-flat">
+                    <StructBody type={childType} node={child} ctx={fieldCtx} />
+                </div>
+            );
+        }
+        return <Body type={childType} node={child} ctx={fieldCtx} />;
+    };
+
     return (
         <div className="node" data-category={category}>
             <div className="node-header">
+                {canToggle && (
+                    <button type="button" className="toggle" onClick={() => setIsCollapsed(!isCollapsed)}>
+                        {isCollapsed ? Octicon.chevron_right : Octicon.chevron_down}
+                    </button>
+                )}
                 <button type="button" className="remove" onClick={handleRemove}>
                     {Octicon.trashcan}
                 </button>
                 <Key label={fieldKey} raw />
-                <Head type={childType} node={child} ctx={fieldCtx} />
+                {!isCollapsed && <Head type={childType} node={child} ctx={fieldCtx} />}
             </div>
-            <Body type={childType} node={child} ctx={fieldCtx} />
+            {renderBody()}
         </div>
     );
 }

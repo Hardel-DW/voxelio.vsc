@@ -22,6 +22,7 @@ import type {
     SimplifiedMcdocTypeNoUnion as SpyglassSimplifiedMcdocTypeNoUnion
 } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import { simplify } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
+import { randomInt, randomSeed } from "./Utils.ts";
 
 export type SimplifiedMcdocType = SpyglassSimplifiedMcdocType;
 export type SimplifiedMcdocTypeNoUnion = SpyglassSimplifiedMcdocTypeNoUnion;
@@ -108,6 +109,7 @@ export function getDefault(type: SimplifiedMcdocType, range: Range, ctx: Checker
     return { type: "json:null", range };
 }
 
+// Misode: McdocHelpers.ts:52-88
 function createNumericDefault(type: NumericType, range: Range): JsonNode {
     let num: number | bigint = 0;
     if (type.valueRange) {
@@ -121,6 +123,10 @@ function createNumericDefault(type: NumericType, range: Range): JsonNode {
                 num += 1;
             }
         }
+    }
+    // Misode: McdocHelpers.ts:76-83 - Handle @random attribute
+    if (type.attributes?.some((a) => a.name === "random")) {
+        num = type.kind === "long" ? randomSeed() : randomInt();
     }
     const value: LongNode | FloatNode =
         typeof num !== "number" || Number.isInteger(num)

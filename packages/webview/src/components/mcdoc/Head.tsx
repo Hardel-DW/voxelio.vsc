@@ -1,12 +1,15 @@
+import { getItemType, isFixedList, isListOrArray } from "@/services/McdocHelpers.ts";
 import { BooleanHead } from "./heads/BooleanHead.tsx";
 import { EnumHead } from "./heads/EnumHead.tsx";
 import { ListHead } from "./heads/ListHead.tsx";
 import { NumericHead } from "./heads/NumericHead.tsx";
 import { StringHead } from "./heads/StringHead.tsx";
 import { StructHead } from "./heads/StructHead.tsx";
+import { TupleHead } from "./heads/TupleHead.tsx";
 import { UnionHead } from "./heads/UnionHead.tsx";
 import type { NodeProps } from "./types.ts";
 
+// Misode: McdocRenderer.tsx:58-93
 export function Head({ type, node, ctx, optional }: NodeProps): React.ReactNode {
     switch (type.kind) {
         case "string":
@@ -36,10 +39,19 @@ export function Head({ type, node, ctx, optional }: NodeProps): React.ReactNode 
         case "byte_array":
         case "int_array":
         case "long_array":
+            // Misode: McdocRenderer.tsx:77-81 - Fixed length arrays are treated as tuples (e.g., UUID)
+            if (isListOrArray(type) && isFixedList(type)) {
+                const tupleType = {
+                    kind: "tuple" as const,
+                    items: [...Array(type.lengthRange.min)].map(() => getItemType(type)),
+                    attributes: type.attributes
+                };
+                return <TupleHead type={tupleType} node={node} ctx={ctx} optional={optional} />;
+            }
             return <ListHead type={type} node={node} ctx={ctx} optional={optional} />;
 
         case "tuple":
-            return <ListHead type={type} node={node} ctx={ctx} optional={optional} />;
+            return <TupleHead type={type} node={node} ctx={ctx} optional={optional} />;
 
         case "literal":
             return <span className="literal">{String(type.value.value)}</span>;

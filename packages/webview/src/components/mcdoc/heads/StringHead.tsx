@@ -3,8 +3,10 @@ import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import { getValues } from "@spyglassmc/mcdoc/lib/runtime/completer/index.js";
 import { Autocomplete } from "@/components/Autocomplete.tsx";
+import { Octicon } from "@/components/Icons.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import { formatIdentifier, getIdRegistry, isSelectRegistry, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import { generateColor, intToHexRgb } from "@/services/Utils.ts";
 
 type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;
 
@@ -17,12 +19,25 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
     const idRegistry = getIdRegistry(type);
     const isSelect = idRegistry !== undefined && isSelectRegistry(idRegistry);
 
+    // Misode: McdocRenderer.tsx:197-199 - Check for @color attribute
+    const colorAttr = type.attributes?.find((a) => a.name === "color")?.value;
+    const colorKind = colorAttr?.kind === "literal" && colorAttr.value.kind === "string" ? colorAttr.value.value : undefined;
+
     // Misode: McdocRenderer.tsx:189-195
     const completions = getCompletions(type, stringNode, ctx, excludeStrings);
 
     const handleChange = (value: string): void => {
         if (nodeValue === value) return;
         ctx.makeEdit((range) => createStringNode(value, range, optional, isSelect, ctx));
+    };
+
+    // Misode: McdocRenderer.tsx:201-207
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        handleChange(e.target.value);
+    };
+
+    const handleRandomColor = (): void => {
+        handleChange(intToHexRgb(generateColor()));
     };
 
     // Misode: McdocRenderer.tsx:215-220 - Select for registry types
@@ -44,6 +59,19 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
     if (completions.length > 0) {
         const options = completions.map((c) => ({ value: c.value }));
         return <Autocomplete value={nodeValue} options={options} onChange={handleChange} />;
+    }
+
+    // Misode: McdocRenderer.tsx:209-214 - Color picker for hex colors
+    if (colorKind === "hex_rgb") {
+        return (
+            <>
+                <input type="text" value={nodeValue} onChange={(e) => handleChange(e.target.value)} />
+                <input className="short-input" type="color" value={nodeValue || "#000000"} onChange={handleColorChange} />
+                <button type="button" onClick={handleRandomColor}>
+                    {Octicon.random}
+                </button>
+            </>
+        );
     }
 
     // Misode: McdocRenderer.tsx:225 - Plain input

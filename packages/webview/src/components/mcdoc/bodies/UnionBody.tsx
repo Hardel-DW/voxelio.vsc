@@ -8,5 +8,8 @@ type UnionTypeDef = Extract<SimplifiedMcdocType, { kind: "union" }>;
 // Misode: McdocRenderer.tsx:437-443
 export function UnionBody({ type, optional, node, ctx }: NodeProps<UnionTypeDef>): React.ReactNode {
     const selectedType = selectUnionMember(type, node);
+    if (selectedType === undefined) {
+        return null;
+    }
     return <Body type={selectedType} optional={optional} node={node} ctx={ctx} />;
 }

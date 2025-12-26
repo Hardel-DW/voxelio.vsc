@@ -486,7 +486,11 @@ export function getIdRegistry(type: StringType): string | undefined {
     if (idAttribute?.kind === "literal" && idAttribute.value.kind === "string") {
         return idAttribute.value.value;
     }
-    if (idAttribute?.kind === "tree" && idAttribute.values.registry?.kind === "literal" && idAttribute.values.registry.value.kind === "string") {
+    if (
+        idAttribute?.kind === "tree" &&
+        idAttribute.values.registry?.kind === "literal" &&
+        idAttribute.values.registry.value.kind === "string"
+    ) {
         return idAttribute.values.registry.value.value;
     }
     return undefined;
@@ -512,30 +516,19 @@ export function quickEqualTypes(a: SimplifiedMcdocTypeNoUnion, b: SimplifiedMcdo
     return true;
 }
 
-export function selectUnionMember(type: SimplifiedMcdocType & { kind: "union" }, node: JsonNode | undefined): SimplifiedMcdocTypeNoUnion {
-    if (!node || type.members.length === 0) {
-        return type.members[0] ?? { kind: "any" };
+// Misode: McdocRenderer.tsx:445-457
+export function selectUnionMember(
+    type: SimplifiedMcdocType & { kind: "union" },
+    node: JsonNode | undefined
+): SimplifiedMcdocTypeNoUnion | undefined {
+    // Misode: returns undefined if no valid typeDef
+    const selectedType = (node as JsonNode & { typeDef?: SimplifiedMcdocType })?.typeDef;
+    if (!selectedType || selectedType.kind === "any" || selectedType.kind === "unsafe") {
+        return undefined;
     }
-
-    // Check typeDef on the node first (set by spyglass validation)
-    const nodeTypeDef = (node as JsonNode & { typeDef?: SimplifiedMcdocTypeNoUnion }).typeDef;
-    if (nodeTypeDef) {
-        const match = type.members.find((m) => quickEqualTypes(m, nodeTypeDef));
-        if (match) return match;
+    if (selectedType.kind === "union") {
+        // Find the first selected type that is also part of the original definition
+        return selectedType.members.find((m1) => type.members.find((m2) => quickEqualTypes(m1, m2)));
     }
-
-    // Infer from node structure
-    const inferred = inferType(node);
-    for (const member of type.members) {
-        if (member.kind === "literal" && inferred.kind === "literal") {
-            if (member.value.kind === inferred.value.kind && member.value.value === inferred.value.value) {
-                return member;
-            }
-        }
-        if (member.kind === inferred.kind) {
-            return member;
-        }
-    }
-
-    return type.members[0];
+    return selectedType;
 }

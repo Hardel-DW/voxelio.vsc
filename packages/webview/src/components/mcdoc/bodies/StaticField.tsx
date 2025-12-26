@@ -3,7 +3,7 @@ import type { JsonObjectNode, JsonPairNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { LiteralType } from "@spyglassmc/mcdoc";
 import { Body } from "@/components/mcdoc/Body.tsx";
-import { ErrorIndicator } from "@/components/mcdoc/ErrorIndicator.tsx";
+import { Errors, SimpleError } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
@@ -35,7 +35,8 @@ export function StaticField({ pair, index, field, fieldKey, staticFields, node, 
     return (
         <div className="node" data-category={category}>
             <div className="node-header">
-                {isMissingRequired && <ErrorIndicator message={`Missing required key "${fieldKey}"`} />}
+                {isMissingRequired && <SimpleError message={`Missing required key "${fieldKey}"`} />}
+                <Errors type={childType} node={child} ctx={ctx} />
                 <Key label={fieldKey} doc={field.desc} />
                 <Head type={childType} node={child} optional={field.optional} ctx={fieldCtx} />
             </div>

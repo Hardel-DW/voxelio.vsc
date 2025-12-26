@@ -2,9 +2,9 @@ import { Range, Source, string } from "@spyglassmc/core";
 import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import { getValues } from "@spyglassmc/mcdoc/lib/runtime/completer/index.js";
+import { Autocomplete } from "@/components/Autocomplete.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import { formatIdentifier, getIdRegistry, isSelectRegistry, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
-import { Autocomplete } from "@/components/Autocomplete.tsx";
 
 type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;
 

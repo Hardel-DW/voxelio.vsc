@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 
 interface AutocompleteOption {
     value: string;
@@ -59,11 +59,7 @@ export function Autocomplete({ value, options, onChange, placeholder }: Autocomp
             {isOpen && filteredOptions.length > 0 && (
                 <ul className="autocomplete-dropdown">
                     {filteredOptions.map((opt) => (
-                        <li
-                            key={opt.value}
-                            className={opt.value === value ? "selected" : ""}
-                            onMouseDown={() => handleSelect(opt.value)}
-                        >
+                        <li key={opt.value} className={opt.value === value ? "selected" : ""} onMouseDown={() => handleSelect(opt.value)}>
                             {opt.label ?? opt.value}
                         </li>
                     ))}

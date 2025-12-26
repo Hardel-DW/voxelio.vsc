@@ -1,9 +1,10 @@
-import { useState } from "react";
 import type { ItemNode } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
+import { useState } from "react";
 import { Octicon } from "@/components/Icons.tsx";
 import { Body } from "@/components/mcdoc/Body.tsx";
+import { Errors } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
@@ -136,10 +137,11 @@ function ListItem({ item, index, category, type, node, ctx }: ListItemProps): Re
         return <Body type={type} node={child} ctx={itemCtx} />;
     };
 
-    // Misode structure: toggle → delete → order → label → content
+    // Misode structure: errors → toggle → delete → order → label → content
     return (
         <div className="node" data-category={category}>
             <div className="node-header">
+                <Errors type={type} node={child} ctx={ctx} />
                 {canToggle && (
                     <button type="button" className="toggle" onClick={() => setIsCollapsed(!isCollapsed)}>
                         {isCollapsed ? Octicon.chevron_right : Octicon.chevron_down}

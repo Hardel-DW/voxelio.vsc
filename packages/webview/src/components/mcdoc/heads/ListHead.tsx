@@ -9,17 +9,13 @@ import { getDefault, getItemType, simplifyType } from "@/services/McdocHelpers.t
 type ListType = Extract<SimplifiedMcdocType, { kind: "list" | "byte_array" | "int_array" | "long_array" | "tuple" }>;
 
 // Misode: McdocRenderer.tsx:795-831
-export function ListHead({ type, node, ctx, optional }: NodeProps<ListType>): React.ReactNode {
+export function ListHead({ type, node, ctx }: NodeProps<ListType>): React.ReactNode {
     const arrayNode = JsonArrayNode.is(node) ? node : undefined;
-    const itemCount = arrayNode?.children?.length ?? 0;
-
-    // Misode: ListHead only shows "+" button, count is shown separately
-    // Don't show if node doesn't exist and field is optional (StaticField shows its own + button)
-    if (!arrayNode && optional) {
-        return null;
-    }
+    const maxLength = type.kind === "tuple" ? type.items.length : (type.lengthRange?.max ?? Number.POSITIVE_INFINITY);
+    const canAdd = maxLength > (arrayNode?.children?.length ?? 0);
 
     const handleAdd = (): void => {
+        if (!canAdd) return;
         ctx.makeEdit((range) => {
             const itemType = simplifyType(getItemType(type), ctx);
             const newValue = getDefault(itemType, range, ctx);
@@ -48,7 +44,7 @@ export function ListHead({ type, node, ctx, optional }: NodeProps<ListType>): Re
     };
 
     return (
-        <button type="button" className="add" onClick={handleAdd}>
+        <button type="button" className="add" onClick={handleAdd} disabled={!canAdd}>
             {Octicon.plus}
         </button>
     );

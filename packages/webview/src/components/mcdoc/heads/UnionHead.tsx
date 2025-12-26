@@ -5,23 +5,26 @@ import { formatIdentifier, getChange, getDefault, quickEqualTypes, selectUnionMe
 
 type UnionTypeDef = Extract<SimplifiedMcdocType, { kind: "union" }>;
 
+const SPECIAL_UNSET = "__unset__";
+
 // Misode: McdocRenderer.tsx:384-417
 export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>): React.ReactNode {
     if (type.members.length === 0) {
         return null;
     }
 
+    // Misode: selectUnionMember returns undefined if no valid selection
     const selectedType = selectUnionMember(type, node);
-    const memberIndex = type.members.findIndex((m) => quickEqualTypes(m, selectedType));
+    const memberIndex = selectedType ? type.members.findIndex((m) => quickEqualTypes(m, selectedType)) : -1;
 
     const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>): void => {
         const newValue = e.target.value;
         ctx.makeEdit((range) => {
-            if (newValue === "") {
+            if (newValue === SPECIAL_UNSET) {
                 return undefined;
             }
             const newSelected = type.members[Number.parseInt(newValue, 10)];
-            if (node) {
+            if (node && selectedType) {
                 return getChange(newSelected, selectedType, node, ctx);
             }
             return getDefault(newSelected, range, ctx);
@@ -30,8 +33,8 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
 
     return (
         <>
-            <select value={memberIndex > -1 ? memberIndex : ""} onChange={handleSelect}>
-                {(!node || optional) && <option value="">Select...</option>}
+            <select value={memberIndex > -1 ? memberIndex : SPECIAL_UNSET} onChange={handleSelect}>
+                {(selectedType === undefined || optional) && <option value={SPECIAL_UNSET}>-- unset --</option>}
                 {type.members.map((member, index) => (
                     <option key={String(index)} value={String(index)}>
                         {formatUnionMember(
@@ -41,7 +44,7 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
                     </option>
                 ))}
             </select>
-            {selectedType.kind !== "literal" && <Head type={selectedType} node={node} ctx={ctx} />}
+            {selectedType && selectedType.kind !== "literal" && <Head type={selectedType} node={node} ctx={ctx} />}
         </>
     );
 }

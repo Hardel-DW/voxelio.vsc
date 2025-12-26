@@ -410,16 +410,19 @@ button.move:disabled svg {
 .node-icon .icon-popup {
     visibility: hidden;
     width: 240px;
-    background-color: var(--background-6);
-    color: var(--text-1);
+    background-color: var(--node-background-label);
+    color: var(--node-text);
     text-align: center;
     border-radius: 6px;
     padding: 8px 4px;
     position: absolute;
-    z-index: 2;
+    z-index: 100;
     top: 125%;
     left: 50%;
     margin-left: -120px;
+    border: 1px solid var(--node-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-size: 11px;
 }
 
 .node-icon .icon-popup::after {
@@ -430,7 +433,7 @@ button.move:disabled svg {
     margin-left: -3px;
     border-width: 5px;
     border-style: solid;
-    border-color: transparent transparent var(--background-6) transparent;
+    border-color: transparent transparent var(--node-background-label) transparent;
 }
 
 .node-icon svg:hover + .icon-popup,
@@ -439,10 +442,10 @@ button.move:disabled svg {
 }
 
 .node-icon svg {
-    height: 12px;
-    width: 12px;
-    min-width: 12px;
-    margin-left: 4px;
+    height: 24px;
+    width: 24px;
+    min-width: 24px;
+    margin-left: 6px;
     cursor: pointer;
 }
 

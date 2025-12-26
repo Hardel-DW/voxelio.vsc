@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Range } from "@spyglassmc/core";
 import type { JsonObjectNode, JsonPairNode } from "@spyglassmc/json";
+import { useState } from "react";
 import { Octicon } from "@/components/Icons.tsx";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";

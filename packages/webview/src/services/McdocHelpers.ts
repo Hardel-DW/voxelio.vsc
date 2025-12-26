@@ -479,6 +479,19 @@ export function isSelectRegistry(registry: string): boolean {
     return SELECT_REGISTRIES.has(registry);
 }
 
+// Misode: McdocRenderer.tsx:155-160
+type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;
+export function getIdRegistry(type: StringType): string | undefined {
+    const idAttribute = type.attributes?.find((a) => a.name === "id")?.value;
+    if (idAttribute?.kind === "literal" && idAttribute.value.kind === "string") {
+        return idAttribute.value.value;
+    }
+    if (idAttribute?.kind === "tree" && idAttribute.values.registry?.kind === "literal" && idAttribute.values.registry.value.kind === "string") {
+        return idAttribute.values.registry.value.value;
+    }
+    return undefined;
+}
+
 const DEFAULT_COLLAPSED_TYPES = new Set(["::java::data::worldgen::surface_rule::SurfaceRule"]);
 
 export function isDefaultCollapsedType(type: McdocType): boolean {

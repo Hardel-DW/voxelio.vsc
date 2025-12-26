@@ -230,11 +230,6 @@ button.toggle {
     background-color: var(--node-selected);
 }
 
-/* Union head wrapper */
-.union-head {
-    display: contents;
-}
-
 .node-header > input,
 .node-header input {
     font-size: 10px;
@@ -346,9 +341,6 @@ button.add {
     background-color: var(--node-add);
     border-color: var(--node-add-border);
     color: var(--node-text);
-    width: 24px;
-    min-width: 24px;
-    padding: 0;
 }
 
 button.add:enabled:hover {
@@ -359,9 +351,6 @@ button.remove {
     background-color: var(--node-remove);
     border-color: var(--node-remove-border);
     color: var(--node-text);
-    width: 24px;
-    min-width: 24px;
-    padding: 0;
 }
 
 button.remove:enabled:hover {

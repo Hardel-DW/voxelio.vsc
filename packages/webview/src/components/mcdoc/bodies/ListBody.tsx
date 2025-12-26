@@ -8,7 +8,8 @@ import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import { getCategory, getItemType, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
+import { getCategory, getDefault, getItemType, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
+import { StructBody } from "./StructBody.tsx";
 
 type ListType = Extract<SimplifiedMcdocType, { kind: "list" | "byte_array" | "int_array" | "long_array" | "tuple" }>;
 
@@ -19,13 +20,39 @@ export function ListBody({ type: outerType, node, ctx }: NodeProps<ListType>): R
     }
 
     const type = node.typeDef && isListOrArray(node.typeDef) ? node.typeDef : outerType;
-    const childType = simplifyType(getItemType(type), ctx);
+    const itemType = getItemType(type);
+    const category = getCategory(itemType);
+    const childType = simplifyType(itemType, ctx);
+
+    // Misode: McdocRenderer.tsx:848-874
+    const handleAddBottom = (): void => {
+        ctx.makeEdit((range) => {
+            const newValue = getDefault(childType, range, ctx);
+            const newItem: ItemNode<JsonNode> = {
+                type: "item",
+                range,
+                children: [newValue],
+                value: newValue
+            };
+            newValue.parent = newItem;
+            node.children.push(newItem);
+            newItem.parent = node;
+            return node;
+        });
+    };
 
     return (
         <>
             {node.children.map((item, index) => (
-                <ListItem key={String(index)} item={item} index={index} type={childType} node={node} ctx={ctx} />
+                <ListItem key={String(index)} item={item} index={index} category={category} type={childType} node={node} ctx={ctx} />
             ))}
+            {node.children.length > 0 && (
+                <div className="node-header">
+                    <button type="button" className="add" onClick={handleAddBottom}>
+                        {Octicon.plus}
+                    </button>
+                </div>
+            )}
         </>
     );
 }
@@ -43,16 +70,16 @@ function isListOrArray(type: SimplifiedMcdocType): type is ListType {
 interface ListItemProps {
     item: ItemNode<JsonNode>;
     index: number;
+    category: string | undefined;
     type: SimplifiedMcdocType;
     node: JsonArrayNode;
     ctx: McdocContext;
 }
 
 // Misode: McdocRenderer.tsx:908-1008
-function ListItem({ item, index, type, node, ctx }: ListItemProps): React.ReactNode {
+function ListItem({ item, index, category, type, node, ctx }: ListItemProps): React.ReactNode {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const child = item.value;
-    const category = getCategory(type);
     const canMoveUp = index > 0;
     const canMoveDown = index < node.children.length - 1;
     const canToggle = type.kind === "struct" || type.kind === "list" || type.kind === "union";
@@ -96,6 +123,19 @@ function ListItem({ item, index, type, node, ctx }: ListItemProps): React.ReactN
 
     const itemCtx: McdocContext = { ...ctx, makeEdit: makeItemEdit };
 
+    // Misode: McdocRenderer.tsx:1001-1005 - use node-body-flat for struct with category
+    const renderBody = (): React.ReactNode => {
+        if (isCollapsed) return null;
+        if (type.kind === "struct" && category) {
+            return (
+                <div className="node-body-flat">
+                    <StructBody type={type} node={child} ctx={itemCtx} />
+                </div>
+            );
+        }
+        return <Body type={type} node={child} ctx={itemCtx} />;
+    };
+
     // Misode structure: toggle → delete → order → label → content
     return (
         <div className="node" data-category={category}>
@@ -121,7 +161,7 @@ function ListItem({ item, index, type, node, ctx }: ListItemProps): React.ReactN
                 <Key label="Entry" />
                 {!isCollapsed && <Head type={type} node={child} ctx={itemCtx} />}
             </div>
-            {!isCollapsed && <Body type={type} node={child} ctx={itemCtx} />}
+            {renderBody()}
         </div>
     );
 }

@@ -29,7 +29,7 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
     };
 
     return (
-        <div className="union-head">
+        <>
             <select value={memberIndex > -1 ? memberIndex : ""} onChange={handleSelect}>
                 {(!node || optional) && <option value="">Select...</option>}
                 {type.members.map((member, index) => (
@@ -42,7 +42,7 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
                 ))}
             </select>
             {selectedType.kind !== "literal" && <Head type={selectedType} node={node} ctx={ctx} />}
-        </div>
+        </>
     );
 }
 

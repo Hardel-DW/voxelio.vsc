@@ -2,13 +2,12 @@ import { Range } from "@spyglassmc/core";
 import type { JsonObjectNode, JsonPairNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { LiteralType } from "@spyglassmc/mcdoc";
-import { Octicon } from "@/components/Icons.tsx";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { ErrorIndicator } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import { getCategory, getDefault, type SimplifiedMcdocField, simplifyType } from "@/services/McdocHelpers.ts";
+import { getCategory, type SimplifiedMcdocField, simplifyType } from "@/services/McdocHelpers.ts";
 
 // Misode: McdocRenderer.tsx:558-647
 interface StaticFieldProps {
@@ -32,18 +31,12 @@ export function StaticField({ pair, index, field, fieldKey, staticFields, node, 
     };
 
     const fieldCtx: McdocContext = { ...ctx, makeEdit: makeFieldEdit };
-    const handleAdd = (): void => makeFieldEdit((range) => getDefault(childType, range, ctx));
 
     return (
         <div className="node" data-category={category}>
             <div className="node-header">
                 {isMissingRequired && <ErrorIndicator message={`Missing required key "${fieldKey}"`} />}
                 <Key label={fieldKey} doc={field.desc} />
-                {!pair && field.optional && (
-                    <button type="button" className="add" onClick={handleAdd}>
-                        {Octicon.plus}
-                    </button>
-                )}
                 <Head type={childType} node={child} optional={field.optional} ctx={fieldCtx} />
             </div>
             <Body type={childType} node={child} optional={field.optional} ctx={fieldCtx} />

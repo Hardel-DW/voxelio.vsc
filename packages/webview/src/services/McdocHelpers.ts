@@ -303,9 +303,9 @@ export function simplifyType(type: McdocType, ctx: CheckerContext, nodeCtx: Simp
         entryNode: {
             parent: parent
                 ? {
-                      entryNode: { parent: undefined, runtimeKey: undefined },
-                      node: { originalNode: parent, inferredType: inferType(parent) }
-                  }
+                    entryNode: { parent: undefined, runtimeKey: undefined },
+                    node: { originalNode: parent, inferredType: inferType(parent) }
+                }
                 : undefined,
             runtimeKey: key ? { originalNode: key, inferredType: inferType(key) } : undefined
         },
@@ -328,10 +328,10 @@ export function simplifyType(type: McdocType, ctx: CheckerContext, nodeCtx: Simp
             }
             return [];
         },
-        reportError: () => {},
-        attachTypeInfo: () => {},
-        nodeAttacher: () => {},
-        stringAttacher: () => {}
+        reportError: () => { },
+        attachTypeInfo: () => { },
+        nodeAttacher: () => { },
+        stringAttacher: () => { }
     };
 
     const result = simplify(type, { node: simplifyNode, ctx: context });
@@ -527,14 +527,14 @@ export function selectUnionMember(
     type: SimplifiedMcdocType & { kind: "union" },
     node: JsonNode | undefined
 ): SimplifiedMcdocTypeNoUnion | undefined {
-    // Misode: returns undefined if no valid typeDef
     const selectedType = (node as JsonNode & { typeDef?: SimplifiedMcdocType })?.typeDef;
     if (!selectedType || selectedType.kind === "any" || selectedType.kind === "unsafe") {
         return undefined;
     }
+
     if (selectedType.kind === "union") {
-        // Find the first selected type that is also part of the original definition
         return selectedType.members.find((m1) => type.members.find((m2) => quickEqualTypes(m1, m2)));
     }
+
     return selectedType;
 }

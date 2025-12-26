@@ -15,7 +15,7 @@ interface JsonFileViewProps {
 export function JsonFileView({ docAndNode, service }: JsonFileViewProps): React.ReactNode {
     const jsonFile = docAndNode.node.children[0];
     if (!JsonFileNode.is(jsonFile)) {
-        return <div className="p-4 text-red-400">Invalid JSON file structure</div>;
+        return <div className="error-message">Invalid JSON file structure</div>;
     }
 
     const node = jsonFile.children[0] as JsonNode | undefined;
@@ -24,11 +24,11 @@ export function JsonFileView({ docAndNode, service }: JsonFileViewProps): React.
     const mcdocType = getMcdocType(resourceType, ctx);
 
     if (!mcdocType) {
-        return <div className="p-4 text-yellow-400">Unknown resource type: {resourceType ?? "none"}</div>;
+        return <div className="error-message">Unknown resource type: {resourceType ?? "none"}</div>;
     }
 
     return (
-        <div className="file-view node-root p-2" data-category={getCategoryFromType(resourceType)}>
+        <div className="file-view node-root" data-category={getCategoryFromType(resourceType)}>
             <McdocRoot type={mcdocType} node={node} ctx={ctx} />
         </div>
     );
@@ -44,15 +44,11 @@ function createMcdocContext(docAndNode: DocAndNode, service: SpyglassService): M
     const checkerCtx = service.getCheckerContext(docAndNode.doc, errors);
 
     const makeEdit = (edit: (range: Range) => JsonNode | undefined): void => {
-        console.log("[JsonFileView] makeEdit called, uri:", docAndNode.doc.uri);
         service.applyEdit(docAndNode.doc.uri, (fileNode) => {
-            console.log("[JsonFileView] applyEdit callback, fileNode children:", fileNode.children.length);
             const jsonFileNode = fileNode.children[0];
             if (JsonFileNode.is(jsonFileNode)) {
                 const original = jsonFileNode.children[0] as JsonNode;
-                console.log("[JsonFileView] original range:", original.range);
                 const newNode = edit(original.range);
-                console.log("[JsonFileView] newNode:", newNode);
                 if (newNode !== undefined) {
                     newNode.parent = fileNode;
                     fileNode.children[0] = newNode;

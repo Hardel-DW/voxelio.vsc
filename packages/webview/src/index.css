@@ -64,6 +64,12 @@ body {
     color: var(--vscode-foreground);
 }
 
+.warning-message {
+    padding: 16px;
+    font-size: 13px;
+    color: var(--vscode-editorWarning-foreground, #cca700);
+}
+
 .info-panel .hint {
     color: var(--vscode-descriptionForeground, #b4b4b4);
     font-size: 12px;

@@ -31,8 +31,32 @@ const VANILLA_MCDOC_URI = "mcdoc://vanilla-mcdoc/symbols.json";
 const CACHE_URI = "file:///cache/";
 const ROOT_URI = "file:///root/";
 
+interface DocumentFormat {
+    tabSize: number;
+    insertSpaces: boolean;
+    eol: "\n" | "\r\n";
+}
+
+function detectFormat(content: string): DocumentFormat {
+    const eol: "\n" | "\r\n" = content.includes("\r\n") ? "\r\n" : "\n";
+    const lines = content.split(/\r?\n/);
+
+    for (const line of lines) {
+        if (!line.trim() || line.trim() === "{" || line.trim() === "[") continue;
+
+        const tabMatch = line.match(/^(\t+)/);
+        if (tabMatch) return { tabSize: 1, insertSpaces: false, eol };
+
+        const spaceMatch = line.match(/^( +)/);
+        if (spaceMatch) return { tabSize: spaceMatch[1].length, insertSpaces: true, eol };
+    }
+
+    return { tabSize: 2, insertSpaces: true, eol };
+}
+
 interface ClientDocument {
     doc: TextDocument;
+    format: DocumentFormat;
     undoStack: string[];
     redoStack: string[];
 }
@@ -72,9 +96,10 @@ export class SpyglassService {
         const docAndNode = await this.service.project.ensureClientManagedChecked(uri);
         if (!docAndNode) return undefined;
 
-        if (!this.documents.has(uri)) {
-            this.documents.set(uri, { doc: docAndNode.doc, undoStack: [], redoStack: [] });
-        }
+        const existing = this.documents.get(uri);
+        const format = existing?.format ?? detectFormat(content);
+        this.documents.set(uri, { doc: docAndNode.doc, format, undoStack: [], redoStack: [] });
+
         return docAndNode;
     }
 
@@ -111,16 +136,23 @@ export class SpyglassService {
         if (!docAndNode) throw new Error(`Cannot get doc and node: ${uri}`);
 
         edit(docAndNode.node);
-        const newText = this.service.format(docAndNode.node, docAndNode.doc, 2, true);
+
+        const { tabSize, insertSpaces, eol } = document.format;
+        let newText = this.service.format(docAndNode.node, docAndNode.doc, tabSize, insertSpaces);
+        if (eol === "\r\n") newText = newText.replace(/\n/g, "\r\n");
+
         TextDocument.update(document.doc, [{ text: newText }], document.doc.version + 1);
         await this.fs.writeFile(uri, document.doc.getText());
         await this.notifyChange(document.doc);
     }
 
     formatNode(node: JsonNode, uri: string): string {
+        const document = this.documents.get(uri);
+        const { tabSize, insertSpaces } = document?.format ?? { tabSize: 2, insertSpaces: true };
+
         const formatter = this.service.project.meta.getFormatter(node.type);
         const doc = TextDocument.create(uri, "json", 1, "");
-        const ctx = FormatterContext.create(this.service.project, { doc, tabSize: 2, insertSpaces: true });
+        const ctx = FormatterContext.create(this.service.project, { doc, tabSize, insertSpaces });
         return formatter(node, ctx);
     }
 

@@ -3,8 +3,6 @@ import { NodeEditorProvider } from "@/providers/NodeEditorProvider.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    console.log("[Voxelio] Activating extension...");
-
     const packDetector = new PackDetector();
     const packInfo = await packDetector.detect();
     if (!packInfo) {

@@ -34,7 +34,6 @@ export class PackDetector {
     async scanWorkspaceRegistries(): Promise<RegistriesPayload> {
         const registries: MutableRegistries = {};
 
-        // Scan JSON files and mcfunction files
         const [jsonFiles, mcfunctionFiles] = await Promise.all([
             vscode.workspace.findFiles("data/**/*.json"),
             vscode.workspace.findFiles("data/**/function/**/*.mcfunction")
@@ -66,7 +65,6 @@ export class PackDetector {
             }
         }
 
-        // Sort each registry
         for (const key of Object.keys(registries)) {
             registries[key].sort();
         }
@@ -76,8 +74,6 @@ export class PackDetector {
 
     private parseDatapackPath(fsPath: string, ext: string): { category: string; resourceId: string } | null {
         const normalizedPath = fsPath.replace(/\\/g, "/");
-
-        // Match: data/{namespace}/{...rest}
         const extEscaped = ext.replace(".", "\\.");
         const regex = new RegExp(`data/([^/]+)/(.+)${extEscaped}$`);
         const match = normalizedPath.match(regex);
@@ -85,23 +81,18 @@ export class PackDetector {
 
         const [, namespace, restPath] = match;
         const parts = restPath.split("/");
-
         if (parts.length < 2) return null;
 
-        // Determine category and resource path based on structure
         let category: string;
         let resourcePath: string;
 
         if (parts[0] === "tags" && parts.length >= 3) {
-            // tags/{type}/{...path} → category: tag/{type}
             category = `tag/${parts[1]}`;
             resourcePath = parts.slice(2).join("/");
         } else if (parts[0] === "worldgen" && parts.length >= 3) {
-            // worldgen/{type}/{...path} → category: worldgen/{type}
             category = `worldgen/${parts[1]}`;
             resourcePath = parts.slice(2).join("/");
         } else {
-            // {category}/{...path}
             category = parts[0];
             resourcePath = parts.slice(1).join("/");
         }

@@ -2,6 +2,10 @@ import type { DocAndNode } from "@spyglassmc/core";
 import type { JSX } from "preact";
 import { useSyncExternalStore } from "preact/compat";
 import { useState } from "preact/hooks";
+import { EmptyState } from "@/components/EmptyState.tsx";
+import { Footer } from "@/components/Footer.tsx";
+import { Header } from "@/components/Header.tsx";
+import { Octicon } from "@/components/Icons.tsx";
 import { JsonFileView } from "@/components/JsonFileView.tsx";
 import { postMessage } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
@@ -60,9 +64,32 @@ async function handleInit(packFormat: number, version: VersionConfig): Promise<v
     tryCreateService();
 }
 
-function handleRegistries(registries: RegistriesPayload): void {
+async function handleRegistries(registries: RegistriesPayload): Promise<void> {
+    const { service, version, virtualUri } = state;
     setState({ registries });
-    tryCreateService();
+
+    if (!service || !version) {
+        tryCreateService();
+        return;
+    }
+
+    const currentContent = virtualUri ? await service.readFile(virtualUri) : undefined;
+    const newService = await SpyglassServiceClass.create(version, registries);
+
+    if (!currentContent || !virtualUri) {
+        setState({ service: newService });
+        return;
+    }
+
+    await newService.writeFile(virtualUri, currentContent);
+    const docAndNode = await newService.openFile(virtualUri);
+    if (!docAndNode) {
+        setState({ service: newService });
+        return;
+    }
+
+    setState({ service: newService, docAndNode });
+    newService.watchFile(virtualUri, onDocumentUpdated);
 }
 
 async function tryCreateService(): Promise<void> {
@@ -154,35 +181,61 @@ export function App(): JSX.Element | null {
     const { packFormat, version, registries, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
 
     if (error) {
-        return <div class="error-message">Error: {error}</div>;
-    }
-
-    if (loading) {
-        return <div class="loading-message">Loading Spyglass...</div>;
-    }
-
-    if (!packFormat || !version) {
-        return <div class="loading-message">Waiting for pack info...</div>;
-    }
-
-    if (!registries) {
-        return <div class="loading-message">Loading registries...</div>;
-    }
-
-    if (!service) {
-        return <div class="loading-message">Initializing Spyglass...</div>;
-    }
-
-    if (!docAndNode) {
         return (
-            <div class="info-panel">
-                <div>
-                    Pack Format: {packFormat} | Version: {version.id}
-                </div>
-                <div class="hint">Open a JSON file in the data folder to start editing.</div>
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.alert} title="Error" description={error} />
+                <Footer />
             </div>
         );
     }
 
-    return <JsonFileView docAndNode={docAndNode} service={service} />;
+    if (loading) {
+        return (
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.loader} title="Loading Spyglass..." />
+                <Footer />
+            </div>
+        );
+    }
+
+    if (!packFormat || !version) {
+        return (
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.loader} title="Waiting for pack info..." />
+                <Footer />
+            </div>
+        );
+    }
+
+    if (!registries) {
+        return (
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.loader} title="Loading registries..." />
+                <Footer />
+            </div>
+        );
+    }
+
+    if (!service) {
+        return (
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.loader} title="Initializing Spyglass..." />
+                <Footer />
+            </div>
+        );
+    }
+
+    return (
+        <div class="editor-layout">
+            <div class="editor-content">
+                <Header packFormat={packFormat} versionId={version.id} />
+                {docAndNode ? (
+                    <JsonFileView docAndNode={docAndNode} service={service} />
+                ) : (
+                    <EmptyState icon={Octicon.file_code} title="No file open" description="Open a JSON file in the data folder to start editing." />
+                )}
+            </div>
+            <Footer />
+        </div>
+    );
 }

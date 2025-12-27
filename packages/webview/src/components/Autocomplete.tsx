@@ -42,7 +42,6 @@ export function Autocomplete({ value, options, onChange, placeholder }: Autocomp
     };
 
     const handleBlur = (): void => {
-        // Delay pour permettre le click sur une option
         setTimeout(() => setIsOpen(false), 150);
     };
 

@@ -1,27 +1,29 @@
-import * as vscode from "vscode";
+import type { ExtensionContext, WebviewView, Webview, TextEditor, TextDocumentChangeEvent, WebviewViewProvider, Disposable, TextDocument, FileSystemWatcher } from "vscode";
+import { Uri, window, workspace, RelativePattern } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
 import type { ExtensionMessage, MutableRegistries, PackInfo, RegistriesPayload, WebviewMessage } from "@/types.ts";
 
-export class NodeEditorProvider implements vscode.WebviewViewProvider {
+export class NodeEditorProvider implements WebviewViewProvider {
     static readonly viewType = "voxelio.nodeEditor";
 
-    private view?: vscode.WebviewView;
+    private view?: WebviewView;
     private readonly cacheService: CacheService;
     private readonly packDetector: PackDetector;
-    private readonly disposables: vscode.Disposable[] = [];
+    private readonly disposables: Disposable[] = [];
+    private fileWatcher?: FileSystemWatcher;
     private currentFileUri?: string;
 
     constructor(
-        private readonly context: vscode.ExtensionContext,
+        private readonly context: ExtensionContext,
         private readonly packInfo: PackInfo
     ) {
         this.cacheService = new CacheService(context);
         this.packDetector = new PackDetector();
     }
 
-    resolveWebviewView(webviewView: vscode.WebviewView): void {
+    resolveWebviewView(webviewView: WebviewView): void {
         this.view = webviewView;
 
         webviewView.webview.options = {
@@ -61,13 +63,10 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
 
     private mergeRegistries(vanilla: Map<string, string[]>, workspace: RegistriesPayload): RegistriesPayload {
         const merged: MutableRegistries = {};
-
-        // Add vanilla registries
         for (const [category, entries] of vanilla) {
             merged[category] = [...entries];
         }
 
-        // Merge workspace registries
         for (const [category, entries] of Object.entries(workspace)) {
             if (!merged[category]) {
                 merged[category] = [];
@@ -95,17 +94,43 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
     }
 
     private registerEditorListeners(): void {
+        this.setupFileWatcher();
         this.disposables.push(
-            vscode.window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChanged(editor)),
-            vscode.workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e))
+            window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChanged(editor)),
+            workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e))
         );
 
-        if (vscode.window.activeTextEditor) {
-            this.onActiveEditorChanged(vscode.window.activeTextEditor);
+        if (window.activeTextEditor) {
+            this.onActiveEditorChanged(window.activeTextEditor);
         }
     }
 
-    private onActiveEditorChanged(editor: vscode.TextEditor | undefined): void {
+    private setupFileWatcher(): void {
+        const workspaceFolder = workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) return;
+
+        const pattern = new RelativePattern(workspaceFolder, "data/**/*.{json,mcfunction}");
+        this.fileWatcher = workspace.createFileSystemWatcher(pattern);
+
+        this.fileWatcher.onDidCreate(() => this.refreshRegistries());
+        this.fileWatcher.onDidDelete(() => this.refreshRegistries());
+
+        this.disposables.push(this.fileWatcher);
+    }
+
+    private async refreshRegistries(): Promise<void> {
+        const version = getVersionFromPackFormat(this.packInfo.packFormat);
+        if (!version) return;
+
+        const [vanillaRegistries, workspaceRegistries] = await Promise.all([
+            this.cacheService.getRegistries(version),
+            this.packDetector.scanWorkspaceRegistries()
+        ]);
+
+        this.sendMessage({ type: "registries", payload: this.mergeRegistries(vanillaRegistries, workspaceRegistries) });
+    }
+
+    private onActiveEditorChanged(editor: TextEditor | undefined): void {
         if (!editor || !this.isDatapackJsonFile(editor.document)) {
             this.currentFileUri = undefined;
             return;
@@ -115,7 +140,7 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
         this.sendFileContent(editor.document);
     }
 
-    private onDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
+    private onDocumentChanged(event: TextDocumentChangeEvent): void {
         const uri = event.document.uri.toString();
         if (uri !== this.currentFileUri) return;
         if (!this.isDatapackJsonFile(event.document)) return;
@@ -123,14 +148,14 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
         this.sendFileContent(event.document);
     }
 
-    private isDatapackJsonFile(document: vscode.TextDocument): boolean {
+    private isDatapackJsonFile(document: TextDocument): boolean {
         if (document.languageId !== "json") return false;
 
         const uri = document.uri.fsPath;
         return uri.includes("data") && uri.endsWith(".json");
     }
 
-    private sendFileContent(document: vscode.TextDocument): void {
+    private sendFileContent(document: TextDocument): void {
         this.sendMessage({
             type: "file",
             payload: { uri: document.uri.toString(), content: document.getText() }
@@ -141,6 +166,9 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
         switch (message.type) {
             case "ready":
                 this.initializeWebview();
+                break;
+            case "refreshRegistries":
+                this.refreshRegistries();
                 break;
             case "requestFile":
                 await this.handleRequestFile(message.uri);
@@ -153,8 +181,8 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
 
     private async handleRequestFile(uriString: string): Promise<void> {
         try {
-            const uri = vscode.Uri.parse(uriString);
-            const content = await vscode.workspace.fs.readFile(uri);
+            const uri = Uri.parse(uriString);
+            const content = await workspace.fs.readFile(uri);
             const text = new TextDecoder().decode(content);
             this.sendMessage({ type: "file", payload: { uri: uriString, content: text } });
         } catch (error) {
@@ -164,9 +192,9 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
 
     private async handleSaveFile(uriString: string, content: string): Promise<void> {
         try {
-            const uri = vscode.Uri.parse(uriString);
+            const uri = Uri.parse(uriString);
             const encoded = new TextEncoder().encode(content);
-            await vscode.workspace.fs.writeFile(uri, encoded);
+            await workspace.fs.writeFile(uri, encoded);
         } catch (error) {
             console.error(`Failed to save file: ${uriString}`, error);
         }
@@ -176,13 +204,13 @@ export class NodeEditorProvider implements vscode.WebviewViewProvider {
         this.view?.webview.postMessage(message);
     }
 
-    private getWebviewDistUri(): vscode.Uri {
-        return vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview");
+    private getWebviewDistUri(): Uri {
+        return Uri.joinPath(this.context.extensionUri, "dist", "webview");
     }
 
-    private buildHtml(webview: vscode.Webview): string {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.getWebviewDistUri(), "index.js"));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.getWebviewDistUri(), "index.css"));
+    private buildHtml(webview: Webview): string {
+        const scriptUri = webview.asWebviewUri(Uri.joinPath(this.getWebviewDistUri(), "index.js"));
+        const styleUri = webview.asWebviewUri(Uri.joinPath(this.getWebviewDistUri(), "index.css"));
         const nonce = this.generateNonce();
 
         return `<!DOCTYPE html>

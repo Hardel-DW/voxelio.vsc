@@ -1,7 +1,7 @@
-import type * as vscode from "vscode";
+import type { Uri } from "vscode";
 
 export interface PackInfo {
-    readonly uri: vscode.Uri;
+    readonly uri: Uri;
     readonly packFormat: number;
     readonly description?: string;
 }
@@ -38,5 +38,6 @@ export type ExtensionMessage =
 
 export type WebviewMessage =
     | { readonly type: "ready" }
+    | { readonly type: "refreshRegistries" }
     | { readonly type: "requestFile"; readonly uri: string }
     | { readonly type: "saveFile"; readonly uri: string; readonly content: string };

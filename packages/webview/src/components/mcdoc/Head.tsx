@@ -55,7 +55,7 @@ export function Head({ type, node, ctx, optional }: NodeProps): JSX.Element | nu
             return <TupleHead type={type} node={node} ctx={ctx} optional={optional} />;
 
         case "literal":
-            return <span class="literal">{String(type.value.value)}</span>;
+            return <UnionHead type={{ kind: "union", members: [type] }} node={node} ctx={ctx} optional={optional} />;
 
         case "any":
         case "unsafe":

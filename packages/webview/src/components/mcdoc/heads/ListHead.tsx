@@ -1,6 +1,7 @@
 import type { ItemNode } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
@@ -9,7 +10,7 @@ import { getDefault, getItemType, simplifyType } from "@/services/McdocHelpers.t
 type ListType = Extract<SimplifiedMcdocType, { kind: "list" | "byte_array" | "int_array" | "long_array" | "tuple" }>;
 
 // Misode: McdocRenderer.tsx:795-831
-export function ListHead({ type, node, ctx }: NodeProps<ListType>): React.ReactNode {
+export function ListHead({ type, node, ctx }: NodeProps<ListType>): JSX.Element | null {
     const arrayNode = JsonArrayNode.is(node) ? node : undefined;
     const maxLength = type.kind === "tuple" ? type.items.length : (type.lengthRange?.max ?? Number.POSITIVE_INFINITY);
     const canAdd = maxLength > (arrayNode?.children?.length ?? 0);
@@ -44,7 +45,7 @@ export function ListHead({ type, node, ctx }: NodeProps<ListType>): React.ReactN
     };
 
     return (
-        <button type="button" className="add" onClick={handleAdd} disabled={!canAdd}>
+        <button type="button" class="add" onClick={handleAdd} disabled={!canAdd}>
             {Octicon.plus}
         </button>
     );

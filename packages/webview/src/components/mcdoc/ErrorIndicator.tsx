@@ -1,6 +1,7 @@
 import type { AstNode, LanguageError } from "@spyglassmc/core";
 import { Range as RangeUtil } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
 import type { McdocContext } from "@/services/McdocContext.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
@@ -14,7 +15,7 @@ interface ErrorsProps {
 }
 
 // Misode: McdocRenderer.tsx:1215-1236
-export function Errors({ type, node, ctx }: ErrorsProps): React.ReactNode {
+export function Errors({ type, node, ctx }: ErrorsProps): JSX.Element | null {
     if (node === undefined) {
         return null;
     }
@@ -31,16 +32,11 @@ export function Errors({ type, node, ctx }: ErrorsProps): React.ReactNode {
 
 function filterErrors(type: SimplifiedMcdocType, node: AstNode, ctx: McdocContext): LanguageError[] {
     const allErrors = ctx.err.errors;
-
-    // Get all errors inside the current node
     const nodeErrors = allErrors.filter((e) => RangeUtil.containsRange(node.range, e.range, true));
-
-    // Unless they are inside a child node (will be shown there)
     const directErrors = nodeErrors.filter(
         (e) => !node.children?.some((c) => (c.type === "item" || c.type === "pair") && RangeUtil.containsRange(c.range, e.range, true))
     );
 
-    // Filter out "Missing key" errors for structs (handled separately)
     const filtered = directErrors.filter((e) => {
         if (RangeUtil.length(e.range) !== 1) return true;
         if (type.kind === "struct") return false;
@@ -51,7 +47,6 @@ function filterErrors(type: SimplifiedMcdocType, node: AstNode, ctx: McdocContex
         return true;
     });
 
-    // Hide warnings if there are errors
     const hasError = filtered.some((e) => e.severity === 3);
     return hasError ? filtered.filter((e) => e.severity === 3) : filtered;
 }
@@ -61,28 +56,27 @@ interface ErrorIndicatorProps {
     error: LanguageError;
 }
 
-export function ErrorIndicator({ error }: ErrorIndicatorProps): React.ReactNode {
+export function ErrorIndicator({ error }: ErrorIndicatorProps): JSX.Element | null {
     const isWarning = error.severity === 2;
     const message = error.message.replace(/ \(rule: [a-zA-Z]+\)$/, "");
 
     return (
-        <span className={`node-icon ${isWarning ? "node-warning" : "node-error"}`}>
+        <span class={`node-icon ${isWarning ? "node-warning" : "node-error"}`}>
             {Octicon.issue_opened}
-            <span className="icon-popup">{message}</span>
+            <span class="icon-popup">{message}</span>
         </span>
     );
 }
 
-// Simple error indicator for missing required keys (no LanguageError)
 interface SimpleErrorProps {
     message: string;
 }
 
-export function SimpleError({ message }: SimpleErrorProps): React.ReactNode {
+export function SimpleError({ message }: SimpleErrorProps): JSX.Element | null {
     return (
-        <span className="node-icon node-error">
+        <span class="node-icon node-error">
             {Octicon.issue_opened}
-            <span className="icon-popup">{message}</span>
+            <span class="icon-popup">{message}</span>
         </span>
     );
 }

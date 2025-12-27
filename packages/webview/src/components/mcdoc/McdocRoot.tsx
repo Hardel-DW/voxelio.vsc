@@ -1,5 +1,6 @@
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonObjectNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import type { McdocContext } from "@/services/McdocContext.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { Body } from "./Body.tsx";
@@ -14,15 +15,14 @@ interface McdocRootProps {
 }
 
 // Misode: McdocRenderer.tsx:41-56
-export function McdocRoot({ type, node, ctx }: McdocRootProps): React.ReactNode {
-    // Si c'est un struct avec des champs et un objet JSON, on rend directement le StructBody
+export function McdocRoot({ type, node, ctx }: McdocRootProps): JSX.Element | null {
     if (type.kind === "struct" && type.fields.length > 0 && JsonObjectNode.is(node)) {
         return <StructBody type={type} node={node} ctx={ctx} />;
     }
 
     return (
         <>
-            <div className="node-header">
+            <div class="node-header">
                 <Key label="root" />
                 <Head type={type} node={node} ctx={ctx} />
             </div>

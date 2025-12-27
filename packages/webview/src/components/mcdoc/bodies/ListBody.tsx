@@ -1,7 +1,8 @@
 import type { ItemNode } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
-import { useState } from "react";
+import type { JSX } from "preact";
+import { useState } from "preact/hooks";
 import { Octicon } from "@/components/Icons.tsx";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { Errors } from "@/components/mcdoc/ErrorIndicator.tsx";
@@ -15,7 +16,7 @@ import { StructBody } from "./StructBody.tsx";
 type ListType = Extract<SimplifiedMcdocType, { kind: "list" | "byte_array" | "int_array" | "long_array" | "tuple" }>;
 
 // Misode: McdocRenderer.tsx:833-897
-export function ListBody({ type: outerType, node, ctx }: NodeProps<ListType>): React.ReactNode {
+export function ListBody({ type: outerType, node, ctx }: NodeProps<ListType>): JSX.Element | null {
     if (!JsonArrayNode.is(node)) {
         return null;
     }
@@ -48,8 +49,8 @@ export function ListBody({ type: outerType, node, ctx }: NodeProps<ListType>): R
                 <ListItem key={String(index)} item={item} index={index} category={category} type={childType} node={node} ctx={ctx} />
             ))}
             {node.children.length > 0 && (
-                <div className="node-header">
-                    <button type="button" className="add" onClick={handleAddBottom}>
+                <div class="node-header">
+                    <button type="button" class="add" onClick={handleAddBottom}>
                         {Octicon.plus}
                     </button>
                 </div>
@@ -78,7 +79,7 @@ interface ListItemProps {
 }
 
 // Misode: McdocRenderer.tsx:908-1008
-function ListItem({ item, index, category, type, node, ctx }: ListItemProps): React.ReactNode {
+function ListItem({ item, index, category, type, node, ctx }: ListItemProps): JSX.Element | null {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const child = item.value;
     const canMoveUp = index > 0;
@@ -125,11 +126,11 @@ function ListItem({ item, index, category, type, node, ctx }: ListItemProps): Re
     const itemCtx: McdocContext = { ...ctx, makeEdit: makeItemEdit };
 
     // Misode: McdocRenderer.tsx:1001-1005 - use node-body-flat for struct with category
-    const renderBody = (): React.ReactNode => {
+    const renderBody = (): JSX.Element | null => {
         if (isCollapsed) return null;
         if (type.kind === "struct" && category) {
             return (
-                <div className="node-body-flat">
+                <div class="node-body-flat">
                     <StructBody type={type} node={child} ctx={itemCtx} />
                 </div>
             );
@@ -139,23 +140,23 @@ function ListItem({ item, index, category, type, node, ctx }: ListItemProps): Re
 
     // Misode structure: errors → toggle → delete → order → label → content
     return (
-        <div className="node" data-category={category}>
-            <div className="node-header">
+        <div class="node" data-category={category}>
+            <div class="node-header">
                 <Errors type={type} node={child} ctx={ctx} />
                 {canToggle && (
-                    <button type="button" className="toggle" onClick={() => setIsCollapsed(!isCollapsed)}>
+                    <button type="button" class="toggle" onClick={() => setIsCollapsed(!isCollapsed)}>
                         {isCollapsed ? Octicon.chevron_right : Octicon.chevron_down}
                     </button>
                 )}
-                <button type="button" className="remove" onClick={handleRemove}>
+                <button type="button" class="remove" onClick={handleRemove}>
                     {Octicon.trashcan}
                 </button>
                 {(canMoveUp || canMoveDown) && (
-                    <div className="node-move">
-                        <button type="button" className="move" disabled={!canMoveUp} onClick={handleMoveUp}>
+                    <div class="node-move">
+                        <button type="button" class="move" disabled={!canMoveUp} onClick={handleMoveUp}>
                             {Octicon.chevron_up}
                         </button>
-                        <button type="button" className="move" disabled={!canMoveDown} onClick={handleMoveDown}>
+                        <button type="button" class="move" disabled={!canMoveDown} onClick={handleMoveDown}>
                             {Octicon.chevron_down}
                         </button>
                     </div>

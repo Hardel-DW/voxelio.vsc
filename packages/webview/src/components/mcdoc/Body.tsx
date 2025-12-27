@@ -1,4 +1,5 @@
 import { JsonArrayNode, JsonObjectNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import { getItemType, isFixedList, isInlineTuple, isListOrArray } from "@/services/McdocHelpers.ts";
 import { ListBody } from "./bodies/ListBody.tsx";
 import { StructBody } from "./bodies/StructBody.tsx";
@@ -7,7 +8,7 @@ import { UnionBody } from "./bodies/UnionBody.tsx";
 import type { NodeProps } from "./types.ts";
 
 // Misode: McdocRenderer.tsx:95-142
-export function Body({ type, node, ctx, optional }: NodeProps): React.ReactNode {
+export function Body({ type, node, ctx, optional }: NodeProps): JSX.Element | null {
     if (type.kind === "union") {
         return <UnionBody type={type} node={node} ctx={ctx} optional={optional} />;
     }
@@ -17,7 +18,7 @@ export function Body({ type, node, ctx, optional }: NodeProps): React.ReactNode 
             return null;
         }
         return (
-            <div className="node-body">
+            <div class="node-body">
                 <StructBody type={type} node={node} ctx={ctx} optional={optional} />
             </div>
         );
@@ -28,7 +29,7 @@ export function Body({ type, node, ctx, optional }: NodeProps): React.ReactNode 
         if (!JsonArrayNode.is(node)) {
             return null;
         }
-        // Misode: McdocRenderer.tsx:111-118 - Fixed length arrays treated as tuples
+        // Misode: McdocRenderer.tsx:111-118
         if (isFixedList(type)) {
             const tupleType = {
                 kind: "tuple" as const,
@@ -39,7 +40,7 @@ export function Body({ type, node, ctx, optional }: NodeProps): React.ReactNode 
                 return null;
             }
             return (
-                <div className="node-body">
+                <div class="node-body">
                     <TupleBody type={tupleType} node={node} ctx={ctx} optional={optional} />
                 </div>
             );
@@ -48,7 +49,7 @@ export function Body({ type, node, ctx, optional }: NodeProps): React.ReactNode 
             return null;
         }
         return (
-            <div className="node-body">
+            <div class="node-body">
                 <ListBody type={type} node={node} ctx={ctx} optional={optional} />
             </div>
         );
@@ -60,7 +61,7 @@ export function Body({ type, node, ctx, optional }: NodeProps): React.ReactNode 
             return null;
         }
         return (
-            <div className="node-body">
+            <div class="node-body">
                 <TupleBody type={type} node={node} ctx={ctx} optional={optional} />
             </div>
         );

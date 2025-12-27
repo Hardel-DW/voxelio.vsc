@@ -1,6 +1,7 @@
 import type { ItemNode } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
@@ -10,7 +11,7 @@ import { getDefault, isInlineTuple, type SimplifiedMcdocType, simplifyType } fro
 type TupleTypeDef = Extract<SimplifiedMcdocType, { kind: "tuple" }>;
 
 // Misode: McdocRenderer.tsx:1010-1049
-export function TupleHead({ type, node, ctx, optional }: NodeProps<TupleTypeDef>): React.ReactNode {
+export function TupleHead({ type, node, ctx, optional }: NodeProps<TupleTypeDef>): JSX.Element | null {
     const arrayNode = JsonArrayNode.is(node) ? node : undefined;
     const isInline = isInlineTuple(type);
 
@@ -22,7 +23,6 @@ export function TupleHead({ type, node, ctx, optional }: NodeProps<TupleTypeDef>
         ctx.makeEdit((range) => getDefault(type, range, ctx));
     };
 
-    // Non-inline tuples use ListHead behavior (just + button)
     if (!isInline) {
         const maxLength = type.items.length;
         const canAdd = maxLength > (arrayNode?.children?.length ?? 0);
@@ -48,7 +48,7 @@ export function TupleHead({ type, node, ctx, optional }: NodeProps<TupleTypeDef>
         };
 
         return (
-            <button type="button" className="add" onClick={handleAdd} disabled={!canAdd}>
+            <button type="button" class="add" onClick={handleAdd} disabled={!canAdd}>
                 {Octicon.plus}
             </button>
         );
@@ -59,17 +59,17 @@ export function TupleHead({ type, node, ctx, optional }: NodeProps<TupleTypeDef>
         <>
             {optional ? (
                 arrayNode ? (
-                    <button type="button" className="remove" onClick={handleRemove}>
+                    <button type="button" class="remove" onClick={handleRemove}>
                         {Octicon.trashcan}
                     </button>
                 ) : (
-                    <button type="button" className="add" onClick={handleSetDefault}>
+                    <button type="button" class="add" onClick={handleSetDefault}>
                         {Octicon.plus}
                     </button>
                 )
             ) : (
                 !arrayNode && (
-                    <button type="button" className="add" onClick={handleSetDefault}>
+                    <button type="button" class="add" onClick={handleSetDefault}>
                         {Octicon.random}
                     </button>
                 )
@@ -103,7 +103,7 @@ interface TupleHeadItemProps {
     ctx: McdocContext;
 }
 
-function TupleHeadItem({ child, childType, index, node, ctx }: TupleHeadItemProps): React.ReactNode {
+function TupleHeadItem({ child, childType, index, node, ctx }: TupleHeadItemProps): JSX.Element | null {
     const makeItemEdit: MakeEdit = (edit) => {
         ctx.makeEdit((range) => {
             const newChild = edit(child?.range ?? node.range ?? range);

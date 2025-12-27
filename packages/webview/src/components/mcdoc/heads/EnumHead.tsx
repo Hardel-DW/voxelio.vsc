@@ -1,6 +1,7 @@
 import { Range } from "@spyglassmc/core";
 import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
+import type { JSX } from "preact";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { formatIdentifier } from "@/services/McdocHelpers.ts";
@@ -8,11 +9,11 @@ import { formatIdentifier } from "@/services/McdocHelpers.ts";
 type EnumType = Extract<SimplifiedMcdocType, { kind: "enum" }>;
 
 // Misode: McdocRenderer.tsx:237-291
-export function EnumHead({ type, node, ctx }: NodeProps<EnumType>): React.ReactNode {
+export function EnumHead({ type, node, ctx }: NodeProps<EnumType>): JSX.Element | null {
     const value = JsonStringNode.is(node) ? node.value : undefined;
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-        const newValue = e.target.value;
+    const handleChange = (e: JSX.TargetedEvent<HTMLSelectElement>): void => {
+        const newValue = e.currentTarget.value;
         if (value === newValue) return;
 
         ctx.makeEdit((range) => {
@@ -32,7 +33,7 @@ export function EnumHead({ type, node, ctx }: NodeProps<EnumType>): React.ReactN
 
     // Misode: direct <select> in node-header
     return (
-        <select value={value ?? ""} onChange={handleChange}>
+        <select value={value ?? ""} onInput={handleChange}>
             <option value="">Select...</option>
             {type.values.map((enumValue) => (
                 <option key={String(enumValue.value)} value={String(enumValue.value)}>

@@ -1,5 +1,7 @@
 import type { DocAndNode } from "@spyglassmc/core";
-import { useState, useSyncExternalStore } from "react";
+import type { JSX } from "preact";
+import { useSyncExternalStore } from "preact/compat";
+import { useState } from "preact/hooks";
 import { JsonFileView } from "@/components/JsonFileView.tsx";
 import { postMessage } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
@@ -143,7 +145,7 @@ function initMessageListener(): void {
     postMessage({ type: "ready" });
 }
 
-export function App(): React.ReactNode {
+export function App(): JSX.Element | null {
     useState(() => {
         initMessageListener();
         return true;
@@ -152,32 +154,32 @@ export function App(): React.ReactNode {
     const { packFormat, version, registries, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
 
     if (error) {
-        return <div className="error-message">Error: {error}</div>;
+        return <div class="error-message">Error: {error}</div>;
     }
 
     if (loading) {
-        return <div className="loading-message">Loading Spyglass...</div>;
+        return <div class="loading-message">Loading Spyglass...</div>;
     }
 
     if (!packFormat || !version) {
-        return <div className="loading-message">Waiting for pack info...</div>;
+        return <div class="loading-message">Waiting for pack info...</div>;
     }
 
     if (!registries) {
-        return <div className="loading-message">Loading registries...</div>;
+        return <div class="loading-message">Loading registries...</div>;
     }
 
     if (!service) {
-        return <div className="loading-message">Initializing Spyglass...</div>;
+        return <div class="loading-message">Initializing Spyglass...</div>;
     }
 
     if (!docAndNode) {
         return (
-            <div className="info-panel">
+            <div class="info-panel">
                 <div>
                     Pack Format: {packFormat} | Version: {version.id}
                 </div>
-                <div className="hint">Open a JSON file in the data folder to start editing.</div>
+                <div class="hint">Open a JSON file in the data folder to start editing.</div>
             </div>
         );
     }

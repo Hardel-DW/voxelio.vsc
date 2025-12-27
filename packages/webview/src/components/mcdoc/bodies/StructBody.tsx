@@ -3,6 +3,7 @@ import { Range } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonObjectNode, type JsonStringNode } from "@spyglassmc/json";
 import type { LiteralType } from "@spyglassmc/mcdoc";
+import type { JSX } from "preact";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { simplifyType } from "@/services/McdocHelpers.ts";
@@ -13,7 +14,7 @@ import { StaticField } from "./StaticField.tsx";
 type StructType = Extract<SimplifiedMcdocType, { kind: "struct" }>;
 
 // Misode: McdocRenderer.tsx:493-556
-export function StructBody({ type: outerType, node, ctx }: NodeProps<StructType>): React.ReactNode {
+export function StructBody({ type: outerType, node, ctx }: NodeProps<StructType>): JSX.Element | null {
     if (!JsonObjectNode.is(node)) return null;
 
     const type = node.typeDef?.kind === "struct" ? node.typeDef : outerType;
@@ -49,8 +50,8 @@ export function StructBody({ type: outerType, node, ctx }: NodeProps<StructType>
                 const keyType = simplifyType(field.key, ctx);
                 const fieldId = `__dynamic_${field.key.kind}_${field.type.kind}__`;
                 return (
-                    <div key={fieldId} className="node">
-                        <div className="node-header">
+                    <div key={fieldId} class="node">
+                        <div class="node-header">
                             <DynamicKey keyType={keyType} valueType={field.type} parent={node} ctx={ctx} />
                         </div>
                     </div>

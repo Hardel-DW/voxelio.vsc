@@ -1,4 +1,5 @@
 import { JsonObjectNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import { getDefault, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
@@ -6,7 +7,7 @@ import { getDefault, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts
 type StructType = Extract<SimplifiedMcdocType, { kind: "struct" }>;
 
 // Misode: McdocRenderer.tsx:459-491
-export function StructHead({ type: outerType, node, ctx, optional }: NodeProps<StructType>): React.ReactNode {
+export function StructHead({ type: outerType, node, ctx, optional }: NodeProps<StructType>): JSX.Element | null {
     const type = node?.typeDef?.kind === "struct" ? node.typeDef : outerType;
 
     const handleRemove = (): void => {
@@ -19,11 +20,11 @@ export function StructHead({ type: outerType, node, ctx, optional }: NodeProps<S
 
     if (optional) {
         return JsonObjectNode.is(node) ? (
-            <button type="button" className="remove" onClick={handleRemove}>
+            <button type="button" class="remove" onClick={handleRemove}>
                 {Octicon.trashcan}
             </button>
         ) : (
-            <button type="button" className="add" onClick={handleSetDefault}>
+            <button type="button" class="add" onClick={handleSetDefault}>
                 {Octicon.plus}
             </button>
         );
@@ -31,7 +32,7 @@ export function StructHead({ type: outerType, node, ctx, optional }: NodeProps<S
 
     if (!JsonObjectNode.is(node)) {
         return (
-            <button type="button" className="add" onClick={handleSetDefault}>
+            <button type="button" class="add" onClick={handleSetDefault}>
                 {Octicon.random}
             </button>
         );

@@ -2,6 +2,7 @@ import { Range, Source, string } from "@spyglassmc/core";
 import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import { getValues } from "@spyglassmc/mcdoc/lib/runtime/completer/index.js";
+import type { JSX } from "preact";
 import { Autocomplete } from "@/components/Autocomplete.tsx";
 import { Octicon } from "@/components/Icons.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
@@ -11,7 +12,7 @@ import { generateColor, intToHexRgb } from "@/services/Utils.ts";
 type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;
 
 // Misode: McdocRenderer.tsx:143-234
-export function StringHead({ type, node, ctx, optional, excludeStrings }: NodeProps<StringType>): React.ReactNode {
+export function StringHead({ type, node, ctx, optional, excludeStrings }: NodeProps<StringType>): JSX.Element | null {
     const stringNode = JsonStringNode.is(node) ? node : undefined;
     const nodeValue = stringNode?.value ?? "";
 
@@ -32,8 +33,8 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
     };
 
     // Misode: McdocRenderer.tsx:201-207
-    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        handleChange(e.target.value);
+    const handleColorChange = (e: JSX.TargetedEvent<HTMLInputElement>): void => {
+        handleChange(e.currentTarget.value);
     };
 
     const handleRandomColor = (): void => {
@@ -43,7 +44,9 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
     // Misode: McdocRenderer.tsx:215-220 - Select for registry types
     if (isSelect) {
         return (
-            <select value={nodeValue || "__unset__"} onChange={(e) => handleChange(e.target.value === "__unset__" ? "" : e.target.value)}>
+            <select
+                value={nodeValue || "__unset__"}
+                onInput={(e) => handleChange(e.currentTarget.value === "__unset__" ? "" : e.currentTarget.value)}>
                 {(nodeValue === "" || optional) && <option value="__unset__">-- unset --</option>}
                 {nodeValue && !completions.some((c) => c.value === nodeValue) && <option value={nodeValue}>{nodeValue}</option>}
                 {completions.map((c) => (
@@ -65,8 +68,8 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
     if (colorKind === "hex_rgb") {
         return (
             <>
-                <input type="text" value={nodeValue} onChange={(e) => handleChange(e.target.value)} />
-                <input className="short-input" type="color" value={nodeValue || "#000000"} onChange={handleColorChange} />
+                <input type="text" value={nodeValue} onInput={(e) => handleChange(e.currentTarget.value)} />
+                <input class="short-input" type="color" value={nodeValue || "#000000"} onInput={handleColorChange} />
                 <button type="button" onClick={handleRandomColor}>
                     {Octicon.random}
                 </button>
@@ -75,7 +78,7 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
     }
 
     // Misode: McdocRenderer.tsx:225 - Plain input
-    return <input type="text" value={nodeValue} onChange={(e) => handleChange(e.target.value)} />;
+    return <input type="text" value={nodeValue} onInput={(e) => handleChange(e.currentTarget.value)} />;
 }
 
 // Misode: McdocRenderer.tsx:189-195
@@ -88,6 +91,7 @@ function getCompletions(type: StringType, node: JsonStringNode | undefined, ctx:
     return values;
 }
 
+// Misode: McdocRenderer.tsx:172-173
 function createStringNode(
     value: string,
     range: Range,
@@ -95,7 +99,6 @@ function createStringNode(
     isSelect: boolean,
     ctx: NodeProps<StringType>["ctx"]
 ): JsonStringNode | undefined {
-    // Misode: McdocRenderer.tsx:172-173
     if ((value.length === 0 && optional) || (isSelect && value === "")) return undefined;
     const valueMap = [{ inner: Range.create(0), outer: Range.create(range.start) }];
     const source = new Source(JSON.stringify(value), valueMap);

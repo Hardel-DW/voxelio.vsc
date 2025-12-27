@@ -2,6 +2,7 @@ import { Range } from "@spyglassmc/core";
 import type { JsonObjectNode, JsonPairNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { LiteralType } from "@spyglassmc/mcdoc";
+import type { JSX } from "preact";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { Errors, SimpleError } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
@@ -20,7 +21,7 @@ interface StaticFieldProps {
     ctx: McdocContext;
 }
 
-export function StaticField({ pair, index, field, fieldKey, staticFields, node, ctx }: StaticFieldProps): React.ReactNode {
+export function StaticField({ pair, index, field, fieldKey, staticFields, node, ctx }: StaticFieldProps): JSX.Element | null {
     const child = pair?.value;
     const childType = simplifyType(field.type, ctx, { key: pair?.key, parent: node });
     const category = getCategory(field.type);
@@ -33,8 +34,8 @@ export function StaticField({ pair, index, field, fieldKey, staticFields, node, 
     const fieldCtx: McdocContext = { ...ctx, makeEdit: makeFieldEdit };
 
     return (
-        <div className="node" data-category={category}>
-            <div className="node-header">
+        <div class="node" data-category={category}>
+            <div class="node-header">
                 {isMissingRequired && <SimpleError message={`Missing required key "${fieldKey}"`} />}
                 <Errors type={childType} node={child} ctx={ctx} />
                 <Key label={fieldKey} doc={field.desc} />

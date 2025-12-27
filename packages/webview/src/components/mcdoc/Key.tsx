@@ -1,3 +1,4 @@
+import type { JSX } from "preact";
 import { formatIdentifier } from "@/services/McdocHelpers.ts";
 
 interface KeyProps {
@@ -6,17 +7,17 @@ interface KeyProps {
     raw?: boolean;
 }
 
-export function Key({ label, doc, raw }: KeyProps): React.ReactNode {
+export function Key({ label, doc, raw }: KeyProps): JSX.Element | null {
     const displayLabel = raw ? label : formatIdentifier(label);
 
     if (doc) {
         return (
-            <span className="node-key has-doc">
+            <span class="node-key has-doc">
                 {displayLabel}
-                <div className="node-doc">{doc}</div>
+                <div class="node-doc">{doc}</div>
             </span>
         );
     }
 
-    return <span className="node-key">{displayLabel}</span>;
+    return <span class="node-key">{displayLabel}</span>;
 }

@@ -1,8 +1,8 @@
-import { createRoot } from "react-dom/client";
+import { render } from "preact";
 import { App } from "@/App.tsx";
 import "./index.css";
 
 const root = document.getElementById("root");
 if (root) {
-    createRoot(root).render(<App />);
+    render(<App />, root);
 }

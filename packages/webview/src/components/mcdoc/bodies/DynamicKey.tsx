@@ -2,7 +2,8 @@ import { Range } from "@spyglassmc/core";
 import type { JsonPairNode } from "@spyglassmc/json";
 import { type JsonObjectNode, JsonStringNode } from "@spyglassmc/json";
 import type { McdocType } from "@spyglassmc/mcdoc";
-import { useState } from "react";
+import type { JSX } from "preact";
+import { useState } from "preact/hooks";
 import { Octicon } from "@/components/Icons.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
@@ -16,7 +17,7 @@ interface DynamicKeyProps {
     ctx: McdocContext;
 }
 
-export function DynamicKey({ keyType, valueType, parent, ctx }: DynamicKeyProps): React.ReactNode {
+export function DynamicKey({ keyType, valueType, parent, ctx }: DynamicKeyProps): JSX.Element | null {
     const [key, setKey] = useState<string>();
 
     const keyNode = createKeyNode(key);
@@ -39,7 +40,7 @@ export function DynamicKey({ keyType, valueType, parent, ctx }: DynamicKeyProps)
     return (
         <>
             <Head type={keyType} optional excludeStrings={excludeStrings} node={keyNode} ctx={keyCtx} />
-            <button type="button" className="add" onClick={handleAdd} disabled={isDisabled}>
+            <button type="button" class="add" onClick={handleAdd} disabled={isDisabled}>
                 {Octicon.plus}
             </button>
         </>

@@ -1,3 +1,4 @@
+import type { JSX } from "preact";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType, SimplifiedMcdocTypeNoUnion } from "@/services/McdocHelpers.ts";
@@ -8,7 +9,7 @@ type UnionTypeDef = Extract<SimplifiedMcdocType, { kind: "union" }>;
 const SPECIAL_UNSET = "__unset__";
 
 // Misode: McdocRenderer.tsx:384-417
-export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>): React.ReactNode {
+export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>): JSX.Element | null {
     if (type.members.length === 0) {
         return null;
     }
@@ -17,8 +18,8 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
     const selectedType = selectUnionMember(type, node);
     const memberIndex = selectedType ? type.members.findIndex((m) => quickEqualTypes(m, selectedType)) : -1;
 
-    const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-        const newValue = e.target.value;
+    const handleSelect = (e: JSX.TargetedEvent<HTMLSelectElement>): void => {
+        const newValue = e.currentTarget.value;
         ctx.makeEdit((range) => {
             if (newValue === SPECIAL_UNSET) {
                 return undefined;
@@ -33,7 +34,7 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
 
     return (
         <>
-            <select value={memberIndex > -1 ? memberIndex : SPECIAL_UNSET} onChange={handleSelect}>
+            <select value={memberIndex > -1 ? memberIndex : SPECIAL_UNSET} onInput={handleSelect}>
                 {(selectedType === undefined || optional) && <option value={SPECIAL_UNSET}>-- unset --</option>}
                 {type.members.map((member, index) => (
                     <option key={String(index)} value={String(index)}>

@@ -2,6 +2,7 @@ import type { DocAndNode, Range } from "@spyglassmc/core";
 import { dissectUri } from "@spyglassmc/java-edition/lib/binder/index.js";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonFileNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import type { McdocContext } from "@/services/McdocContext.ts";
 import { getRootType, simplifyType } from "@/services/McdocHelpers.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
@@ -12,10 +13,10 @@ interface JsonFileViewProps {
     service: SpyglassService;
 }
 
-export function JsonFileView({ docAndNode, service }: JsonFileViewProps): React.ReactNode {
+export function JsonFileView({ docAndNode, service }: JsonFileViewProps): JSX.Element | null {
     const jsonFile = docAndNode.node.children[0];
     if (!JsonFileNode.is(jsonFile)) {
-        return <div className="error-message">Invalid JSON file structure</div>;
+        return <div class="error-message">Invalid JSON file structure</div>;
     }
 
     const node = jsonFile.children[0] as JsonNode | undefined;
@@ -24,11 +25,11 @@ export function JsonFileView({ docAndNode, service }: JsonFileViewProps): React.
     const mcdocType = getMcdocType(resourceType, ctx);
 
     if (!mcdocType) {
-        return <div className="error-message">Unknown resource type: {resourceType ?? "none"}</div>;
+        return <div class="error-message">Unknown resource type: {resourceType ?? "none"}</div>;
     }
 
     return (
-        <div className="file-view node-root" data-category={getCategoryFromType(resourceType)}>
+        <div class="file-view node-root" data-category={getCategoryFromType(resourceType)}>
             <McdocRoot type={mcdocType} node={node} ctx={ctx} />
         </div>
     );

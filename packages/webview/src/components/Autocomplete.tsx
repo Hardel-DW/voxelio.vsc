@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import type { JSX } from "preact";
+import { useRef, useState } from "preact/hooks";
 
 interface AutocompleteOption {
     value: string;
@@ -12,7 +13,7 @@ interface AutocompleteProps {
     placeholder?: string;
 }
 
-export function Autocomplete({ value, options, onChange, placeholder }: AutocompleteProps): React.ReactNode {
+export function Autocomplete({ value, options, onChange, placeholder }: AutocompleteProps): JSX.Element | null {
     const [isOpen, setIsOpen] = useState(false);
     const [filter, setFilter] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -46,20 +47,20 @@ export function Autocomplete({ value, options, onChange, placeholder }: Autocomp
     };
 
     return (
-        <div className="autocomplete">
+        <div class="autocomplete">
             <input
                 ref={inputRef}
                 type="text"
                 value={value}
-                onChange={(e) => handleInputChange(e.target.value)}
+                onInput={(e) => handleInputChange(e.currentTarget.value)}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 placeholder={placeholder}
             />
             {isOpen && filteredOptions.length > 0 && (
-                <ul className="autocomplete-dropdown">
+                <ul class="autocomplete-dropdown">
                     {filteredOptions.map((opt) => (
-                        <li key={opt.value} className={opt.value === value ? "selected" : ""} onMouseDown={() => handleSelect(opt.value)}>
+                        <li key={opt.value} class={opt.value === value ? "selected" : ""} onMouseDown={() => handleSelect(opt.value)}>
                             {opt.label ?? opt.value}
                         </li>
                     ))}

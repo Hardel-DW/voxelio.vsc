@@ -1,5 +1,6 @@
 import type { FloatNode, LongNode } from "@spyglassmc/core";
 import { JsonNumberNode } from "@spyglassmc/json";
+import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
@@ -8,7 +9,7 @@ import { generateColor, intToHexRgb, randomInt, randomSeed } from "@/services/Ut
 type NumericType = Extract<SimplifiedMcdocType, { kind: "byte" | "short" | "int" | "long" | "float" | "double" }>;
 
 // Misode: McdocRenderer.tsx:294-359
-export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): React.ReactNode {
+export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): JSX.Element | null {
     const nodeValue = node && JsonNumberNode.is(node) ? Number(node.value.value) : undefined;
 
     // Misode: McdocRenderer.tsx:333-334
@@ -30,16 +31,16 @@ export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): React.
         });
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const value = e.target.value;
+    const handleChange = (e: JSX.TargetedEvent<HTMLInputElement>): void => {
+        const value = e.currentTarget.value;
         const number = value.length === 0 ? undefined : Number(value);
         if (number !== undefined && Number.isNaN(number)) return;
         updateValue(number);
     };
 
     // Misode: McdocRenderer.tsx:336-338
-    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        updateValue(Number.parseInt(e.target.value.slice(1), 16));
+    const handleColorChange = (e: JSX.TargetedEvent<HTMLInputElement>): void => {
+        updateValue(Number.parseInt(e.currentTarget.value.slice(1), 16));
     };
 
     // Misode: McdocRenderer.tsx:340-342
@@ -54,10 +55,10 @@ export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): React.
 
     return (
         <>
-            <input className="short-input" type="number" value={nodeValue ?? ""} onChange={handleChange} />
+            <input class="short-input" type="number" value={nodeValue ?? ""} onInput={handleChange} />
             {colorKind && (
                 <>
-                    <input className="short-input" type="color" value={intToHexRgb(nodeValue)} onChange={handleColorChange} />
+                    <input class="short-input" type="color" value={intToHexRgb(nodeValue)} onInput={handleColorChange} />
                     <button type="button" onClick={handleRandomColor}>
                         {Octicon.random}
                     </button>

@@ -1,3 +1,4 @@
+import type { JSX } from "preact";
 import { getItemType, isFixedList, isListOrArray } from "@/services/McdocHelpers.ts";
 import { BooleanHead } from "./heads/BooleanHead.tsx";
 import { EnumHead } from "./heads/EnumHead.tsx";
@@ -10,7 +11,7 @@ import { UnionHead } from "./heads/UnionHead.tsx";
 import type { NodeProps } from "./types.ts";
 
 // Misode: McdocRenderer.tsx:58-93
-export function Head({ type, node, ctx, optional }: NodeProps): React.ReactNode {
+export function Head({ type, node, ctx, optional }: NodeProps): JSX.Element | null {
     switch (type.kind) {
         case "string":
             return <StringHead type={type} node={node} ctx={ctx} optional={optional} />;
@@ -54,11 +55,11 @@ export function Head({ type, node, ctx, optional }: NodeProps): React.ReactNode 
             return <TupleHead type={type} node={node} ctx={ctx} optional={optional} />;
 
         case "literal":
-            return <span className="literal">{String(type.value.value)}</span>;
+            return <span class="literal">{String(type.value.value)}</span>;
 
         case "any":
         case "unsafe":
-            return <span className="any">any</span>;
+            return <span class="any">any</span>;
 
         default:
             return null;

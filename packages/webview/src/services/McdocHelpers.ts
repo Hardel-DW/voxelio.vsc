@@ -303,9 +303,9 @@ export function simplifyType(type: McdocType, ctx: CheckerContext, nodeCtx: Simp
         entryNode: {
             parent: parent
                 ? {
-                    entryNode: { parent: undefined, runtimeKey: undefined },
-                    node: { originalNode: parent, inferredType: inferType(parent) }
-                }
+                      entryNode: { parent: undefined, runtimeKey: undefined },
+                      node: { originalNode: parent, inferredType: inferType(parent) }
+                  }
                 : undefined,
             runtimeKey: key ? { originalNode: key, inferredType: inferType(key) } : undefined
         },
@@ -328,10 +328,10 @@ export function simplifyType(type: McdocType, ctx: CheckerContext, nodeCtx: Simp
             }
             return [];
         },
-        reportError: () => { },
-        attachTypeInfo: () => { },
-        nodeAttacher: () => { },
-        stringAttacher: () => { }
+        reportError: () => {},
+        attachTypeInfo: () => {},
+        nodeAttacher: () => {},
+        stringAttacher: () => {}
     };
 
     const result = simplify(type, { node: simplifyNode, ctx: context });

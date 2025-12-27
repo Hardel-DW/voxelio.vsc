@@ -1,6 +1,7 @@
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
 import type { TupleType } from "@spyglassmc/mcdoc";
+import type { JSX } from "preact";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { Errors } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
@@ -19,7 +20,7 @@ export function TupleBody({
     node: JsonArrayNode;
     ctx: McdocContext;
     optional?: boolean;
-}): React.ReactNode {
+}): JSX.Element | null {
     if (!JsonArrayNode.is(node)) {
         return null;
     }
@@ -45,7 +46,7 @@ interface TupleBodyItemProps {
     ctx: McdocContext;
 }
 
-function TupleBodyItem({ child, childType, index, node, ctx }: TupleBodyItemProps): React.ReactNode {
+function TupleBodyItem({ child, childType, index, node, ctx }: TupleBodyItemProps): JSX.Element | null {
     const makeItemEdit: MakeEdit = (edit) => {
         ctx.makeEdit(() => {
             const newChild = edit(child?.range ?? node.range);
@@ -60,8 +61,8 @@ function TupleBodyItem({ child, childType, index, node, ctx }: TupleBodyItemProp
     const itemCtx: McdocContext = { ...ctx, makeEdit: makeItemEdit };
 
     return (
-        <div className="node">
-            <div className="node-header">
+        <div class="node">
+            <div class="node-header">
                 <Errors type={childType} node={child} ctx={ctx} />
                 <Key label="Entry" />
                 <Head type={childType} node={child} ctx={itemCtx} />

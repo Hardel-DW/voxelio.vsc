@@ -151,8 +151,8 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private isDatapackJsonFile(document: TextDocument): boolean {
         if (document.languageId !== "json") return false;
 
-        const uri = document.uri.fsPath;
-        return uri.includes("data") && uri.endsWith(".json");
+        const path = document.uri.fsPath;
+        return (path.includes("data") || path.includes("assets")) && path.endsWith(".json");
     }
 
     private sendFileContent(document: TextDocument): void {

@@ -12,7 +12,9 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
     const provider = new NodeEditorProvider(context, packInfo);
     context.subscriptions.push(
-        window.registerWebviewViewProvider(NodeEditorProvider.viewType, provider),
+        window.registerWebviewViewProvider(NodeEditorProvider.viewType, provider, {
+            webviewOptions: { retainContextWhenHidden: true }
+        }),
         commands.registerCommand("voxelio.openEditor", () => provider.focus())
     );
 }

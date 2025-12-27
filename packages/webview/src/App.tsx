@@ -7,7 +7,7 @@ import { Footer } from "@/components/Footer.tsx";
 import { Header } from "@/components/Header.tsx";
 import { Octicon } from "@/components/Icons.tsx";
 import { JsonFileView } from "@/components/JsonFileView.tsx";
-import { postMessage } from "@/lib/vscode.ts";
+import { getPersistedState, postMessage, setPersistedState } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
 import type { ExtensionMessage, RegistriesPayload, VersionConfig } from "@/types.ts";
@@ -126,6 +126,7 @@ async function handleFile(realUri: string, content: string): Promise<void> {
 
     if (docAndNode) {
         setState({ docAndNode, virtualUri, realUri });
+        setPersistedState({ realUri, virtualUri });
         service.watchFile(virtualUri, onDocumentUpdated);
     }
 }
@@ -170,6 +171,11 @@ function initMessageListener(): void {
     initialized = true;
     window.addEventListener("message", handleMessage);
     postMessage({ type: "ready" });
+
+    const persisted = getPersistedState();
+    if (persisted?.realUri) {
+        postMessage({ type: "requestFile", uri: persisted.realUri });
+    }
 }
 
 export function App(): JSX.Element | null {

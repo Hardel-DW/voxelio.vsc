@@ -56,8 +56,8 @@ export class NodeEditorProvider implements WebviewViewProvider {
 
             const mergedRegistries = this.mergeRegistries(vanillaRegistries, workspaceRegistries);
             this.sendMessage({ type: "registries", payload: mergedRegistries });
-        } catch (error) {
-            console.error("Failed to load registries:", error);
+        } catch {
+            window.showErrorMessage("Voxelio: Failed to load registries");
         }
     }
 
@@ -185,8 +185,8 @@ export class NodeEditorProvider implements WebviewViewProvider {
             const content = await workspace.fs.readFile(uri);
             const text = new TextDecoder().decode(content);
             this.sendMessage({ type: "file", payload: { uri: uriString, content: text } });
-        } catch (error) {
-            console.error(`Failed to read file: ${uriString}`, error);
+        } catch {
+            window.showErrorMessage("Voxelio: Failed to read file");
         }
     }
 
@@ -195,8 +195,8 @@ export class NodeEditorProvider implements WebviewViewProvider {
             const uri = Uri.parse(uriString);
             const encoded = new TextEncoder().encode(content);
             await workspace.fs.writeFile(uri, encoded);
-        } catch (error) {
-            console.error(`Failed to save file: ${uriString}`, error);
+        } catch {
+            window.showErrorMessage("Voxelio: Failed to save file");
         }
     }
 

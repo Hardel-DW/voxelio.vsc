@@ -9,7 +9,7 @@ import type {
     WebviewView,
     WebviewViewProvider
 } from "vscode";
-import { RelativePattern, Uri, window, workspace } from "vscode";
+import { Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
@@ -25,6 +25,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private fileWatcher?: FileSystemWatcher;
     private currentFileUri?: string;
     private currentPackFormat: number;
+    private isApplyingWebviewEdit = false;
 
     constructor(
         private readonly context: ExtensionContext,
@@ -158,6 +159,8 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private onDocumentChanged(event: TextDocumentChangeEvent): void {
+        if (this.isApplyingWebviewEdit) return;
+
         const uri = event.document.uri.toString();
         if (uri !== this.currentFileUri) return;
         if (!this.isDatapackJsonFile(event.document)) return;
@@ -211,12 +214,26 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private async handleSaveFile(uriString: string, content: string): Promise<void> {
+        const uri = Uri.parse(uriString);
+        const document = workspace.textDocuments.find((doc) => doc.uri.toString() === uriString);
+
+        if (!document) {
+            return;
+        }
+
+        const fullRange = new Range(
+            new Position(0, 0),
+            new Position(document.lineCount, 0)
+        );
+
+        const edit = new WorkspaceEdit();
+        edit.replace(uri, fullRange, content);
+
+        this.isApplyingWebviewEdit = true;
         try {
-            const uri = Uri.parse(uriString);
-            const encoded = new TextEncoder().encode(content);
-            await workspace.fs.writeFile(uri, encoded);
-        } catch {
-            window.showErrorMessage("Voxelio: Failed to save file");
+            await workspace.applyEdit(edit);
+        } finally {
+            this.isApplyingWebviewEdit = false;
         }
     }
 

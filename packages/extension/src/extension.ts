@@ -1,5 +1,5 @@
 import type { ExtensionContext } from "vscode";
-import { window, commands } from "vscode";
+import { commands, window } from "vscode";
 import { NodeEditorProvider } from "@/providers/NodeEditorProvider.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 
@@ -19,4 +19,4 @@ export async function activate(context: ExtensionContext): Promise<void> {
     );
 }
 
-export function deactivate(): void { }
+export function deactivate(): void {}

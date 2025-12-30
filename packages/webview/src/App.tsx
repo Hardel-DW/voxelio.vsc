@@ -10,7 +10,7 @@ import { JsonFileView } from "@/components/JsonFileView.tsx";
 import { getPersistedState, postMessage, setPersistedState } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
-import type { ExtensionMessage, RegistriesPayload, VersionConfig } from "@/types.ts";
+import type { ExtensionMessage, RegistriesPayload, VersionConfig, WebviewMessage } from "@/types.ts";
 
 interface AppState {
     packFormat: number | null;
@@ -60,7 +60,7 @@ function extractDatapackPath(uri: string): string | null {
 }
 
 async function handleInit(packFormat: number, version: VersionConfig): Promise<void> {
-    setState({ packFormat, version });
+    setState({ packFormat, version, error: null, service: null, registries: null });
     tryCreateService();
 }
 
@@ -189,6 +189,15 @@ export function App(): JSX.Element | null {
     if (error) {
         return (
             <div class="editor-layout">
+                {version && packFormat && (
+                    <Header
+                        packFormat={packFormat}
+                        versionId={version.id}
+                        onPackFormatChange={(newPackFormat) =>
+                            postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage)
+                        }
+                    />
+                )}
                 <EmptyState icon={Octicon.alert} title="Error" description={error} />
                 <Footer />
             </div>
@@ -231,14 +240,22 @@ export function App(): JSX.Element | null {
         );
     }
 
+    const handlePackFormatChange = (newPackFormat: number): void => {
+        postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage);
+    };
+
     return (
         <div class="editor-layout">
             <div class="editor-content">
-                <Header packFormat={packFormat} versionId={version.id} />
+                <Header packFormat={packFormat} versionId={version.id} onPackFormatChange={handlePackFormatChange} />
                 {docAndNode ? (
                     <JsonFileView docAndNode={docAndNode} service={service} />
                 ) : (
-                    <EmptyState icon={Octicon.file_code} title="No file open" description="Open a JSON file in the data folder to start editing." />
+                    <EmptyState
+                        icon={Octicon.file_code}
+                        title="No file open"
+                        description="Open a JSON file in the data folder to start editing."
+                    />
                 )}
             </div>
             <Footer />

@@ -1,5 +1,15 @@
-import type { ExtensionContext, WebviewView, Webview, TextEditor, TextDocumentChangeEvent, WebviewViewProvider, Disposable, TextDocument, FileSystemWatcher } from "vscode";
-import { Uri, window, workspace, RelativePattern } from "vscode";
+import type {
+    Disposable,
+    ExtensionContext,
+    FileSystemWatcher,
+    TextDocument,
+    TextDocumentChangeEvent,
+    TextEditor,
+    Webview,
+    WebviewView,
+    WebviewViewProvider
+} from "vscode";
+import { RelativePattern, Uri, window, workspace } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
@@ -14,13 +24,15 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private readonly disposables: Disposable[] = [];
     private fileWatcher?: FileSystemWatcher;
     private currentFileUri?: string;
+    private currentPackFormat: number;
 
     constructor(
         private readonly context: ExtensionContext,
-        private readonly packInfo: PackInfo
+        packInfo: PackInfo
     ) {
         this.cacheService = new CacheService(context);
         this.packDetector = new PackDetector();
+        this.currentPackFormat = packInfo.packFormat;
     }
 
     resolveWebviewView(webviewView: WebviewView): void {
@@ -39,14 +51,14 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private async initializeWebview(): Promise<void> {
-        const version = getVersionFromPackFormat(this.packInfo.packFormat);
+        const version = getVersionFromPackFormat(this.currentPackFormat);
 
         if (!version) {
-            this.sendMessage({ type: "init", payload: { packFormat: this.packInfo.packFormat, error: "Unknown version" } });
+            this.sendMessage({ type: "init", payload: { packFormat: this.currentPackFormat, error: "Unknown version" } });
             return;
         }
 
-        this.sendMessage({ type: "init", payload: { packFormat: this.packInfo.packFormat, version } });
+        this.sendMessage({ type: "init", payload: { packFormat: this.currentPackFormat, version } });
 
         try {
             const [vanillaRegistries, workspaceRegistries] = await Promise.all([
@@ -119,7 +131,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private async refreshRegistries(): Promise<void> {
-        const version = getVersionFromPackFormat(this.packInfo.packFormat);
+        const version = getVersionFromPackFormat(this.currentPackFormat);
         if (!version) return;
 
         const [vanillaRegistries, workspaceRegistries] = await Promise.all([
@@ -128,6 +140,11 @@ export class NodeEditorProvider implements WebviewViewProvider {
         ]);
 
         this.sendMessage({ type: "registries", payload: this.mergeRegistries(vanillaRegistries, workspaceRegistries) });
+    }
+
+    private async changePackFormat(packFormat: number): Promise<void> {
+        this.currentPackFormat = packFormat;
+        this.initializeWebview();
     }
 
     private onActiveEditorChanged(editor: TextEditor | undefined): void {
@@ -169,6 +186,9 @@ export class NodeEditorProvider implements WebviewViewProvider {
                 break;
             case "refreshRegistries":
                 this.refreshRegistries();
+                break;
+            case "changePackFormat":
+                this.changePackFormat(message.packFormat);
                 break;
             case "requestFile":
                 await this.handleRequestFile(message.uri);

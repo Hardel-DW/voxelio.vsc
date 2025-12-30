@@ -27,5 +27,6 @@ export type ExtensionMessage =
 export type WebviewMessage =
     | { readonly type: "ready" }
     | { readonly type: "refreshRegistries" }
+    | { readonly type: "changePackFormat"; readonly packFormat: number }
     | { readonly type: "requestFile"; readonly uri: string }
     | { readonly type: "saveFile"; readonly uri: string; readonly content: string };

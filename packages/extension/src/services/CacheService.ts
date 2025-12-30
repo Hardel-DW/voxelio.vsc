@@ -72,7 +72,7 @@ export class CacheService {
         const files = await promises.readdir(this.cachePath).catch(() => []);
 
         for (const file of files) {
-            await promises.unlink(join(this.cachePath, file)).catch(() => { });
+            await promises.unlink(join(this.cachePath, file)).catch(() => {});
         }
     }
 

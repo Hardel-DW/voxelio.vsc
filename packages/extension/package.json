@@ -1,9 +1,15 @@
 {
     "name": "voxelio-extension",
-    "displayName": "Voxelio",
-    "description": "Visual node editor for Minecraft datapacks",
+    "displayName": "Datapack Node Editor - Mi-node",
+    "description": "Integration of the Misode editor into VSC, with Spyglass tools.",
+    "icon": "resources/icon.png",
     "version": "0.0.1",
     "publisher": "voxelio",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Hardel-DW/voxelio.vsc"
+    },
+    "license": "MIT",
     "engines": {
         "vscode": "^1.96.0"
     },

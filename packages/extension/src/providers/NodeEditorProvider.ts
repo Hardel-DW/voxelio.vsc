@@ -16,7 +16,7 @@ import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
 import type { ExtensionMessage, MutableRegistries, PackInfo, RegistriesPayload, WebviewMessage } from "@/types.ts";
 
 export class NodeEditorProvider implements WebviewViewProvider {
-    static readonly viewType = "voxelio.nodeEditor";
+    static readonly viewType = "minode.nodeEditor";
 
     private view?: WebviewView;
     private readonly cacheService: CacheService;
@@ -70,7 +70,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
             const mergedRegistries = this.mergeRegistries(vanillaRegistries, workspaceRegistries);
             this.sendMessage({ type: "registries", payload: mergedRegistries });
         } catch {
-            window.showErrorMessage("Voxelio: Failed to load registries");
+            window.showErrorMessage("Mi-Node: Failed to load registries");
         }
     }
 
@@ -209,7 +209,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
             const text = new TextDecoder().decode(content);
             this.sendMessage({ type: "file", payload: { uri: uriString, content: text } });
         } catch {
-            window.showErrorMessage("Voxelio: Failed to read file");
+            window.showErrorMessage("Mi-Node: Failed to read file");
         }
     }
 
@@ -221,10 +221,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
             return;
         }
 
-        const fullRange = new Range(
-            new Position(0, 0),
-            new Position(document.lineCount, 0)
-        );
+        const fullRange = new Range(new Position(0, 0), new Position(document.lineCount, 0));
 
         const edit = new WorkspaceEdit();
         edit.replace(uri, fullRange, content);
@@ -257,7 +254,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; connect-src https://raw.githubusercontent.com;">
     <link rel="stylesheet" href="${styleUri}">
-    <title>Voxelio</title>
+    <title>Mi-Node</title>
 </head>
 <body>
     <div id="root"></div>

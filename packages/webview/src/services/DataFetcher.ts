@@ -2,7 +2,7 @@ import type { VersionConfig } from "@/types.ts";
 
 const MCMETA_URL = "https://raw.githubusercontent.com/misode/mcmeta";
 const VANILLA_MCDOC_URL = "https://raw.githubusercontent.com/SpyglassMC/vanilla-mcdoc";
-const CACHE_NAME = "voxelio-v1";
+const CACHE_NAME = "minode-v1";
 
 export interface VanillaMcdocSymbols {
     readonly ref: string;

@@ -1,10 +1,10 @@
 {
-    "name": "voxelio-extension",
+    "name": "minode",
     "displayName": "Datapack Node Editor - Mi-node",
     "description": "Integration of the Misode editor into VSC, with Spyglass tools.",
     "icon": "resources/icon.png",
-    "version": "0.0.1",
-    "publisher": "voxelio",
+    "version": "0.1.0",
+    "publisher": "voxel",
     "repository": {
         "type": "git",
         "url": "https://github.com/Hardel-DW/voxelio.vsc"
@@ -24,27 +24,27 @@
         "viewsContainers": {
             "activitybar": [
                 {
-                    "id": "voxelio",
-                    "title": "Voxelio",
+                    "id": "minode",
+                    "title": "Mi-Node",
                     "icon": "$(json)"
                 }
             ]
         },
         "views": {
-            "voxelio": [
+            "minode": [
                 {
                     "icon": "resources/icon.png",
                     "type": "webview",
-                    "id": "voxelio.nodeEditor",
+                    "id": "minode.nodeEditor",
                     "name": "Node Editor"
                 }
             ]
         },
         "commands": [
             {
-                "command": "voxelio.openEditor",
+                "command": "minode.openEditor",
                 "title": "Open Node Editor",
-                "category": "Voxelio"
+                "category": "Mi-Node"
             }
         ]
     },

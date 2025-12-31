@@ -17,7 +17,7 @@ Note: Moving to the secondary panel is better for the development experience. Ju
 3. Open any JSON file in the `data/` or `/assets` folder to edit it visually
 
 ## Commands
-- `Voxelio: Open Node Editor` - Focus the node editor panel
+- `Mi-Node: Open Node Editor` - Focus the node editor panel
 
 ## Contributing
 For ways to contribute, see the Discord Server: https://discord.gg/8z3tkQhay7

@@ -15,7 +15,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         window.registerWebviewViewProvider(NodeEditorProvider.viewType, provider, {
             webviewOptions: { retainContextWhenHidden: true }
         }),
-        commands.registerCommand("voxelio.openEditor", () => provider.focus())
+        commands.registerCommand("minode.openEditor", () => provider.focus())
     );
 }
 

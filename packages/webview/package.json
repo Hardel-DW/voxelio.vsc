@@ -1,5 +1,5 @@
 {
-    "name": "voxelio-webview",
+    "name": "minode.webview",
     "private": true,
     "type": "module",
     "scripts": {

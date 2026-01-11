@@ -20,7 +20,7 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
     const idRegistry = getIdRegistry(type);
     const isSelect = idRegistry !== undefined && isSelectRegistry(idRegistry);
 
-    // Misode: McdocRenderer.tsx:197-199 - Check for @color attribute
+    // Misode: McdocRenderer.tsx:197-199
     const colorAttr = type.attributes?.find((a) => a.name === "color")?.value;
     const colorKind = colorAttr?.kind === "literal" && colorAttr.value.kind === "string" ? colorAttr.value.value : undefined;
 
@@ -64,7 +64,7 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
         return <Autocomplete value={nodeValue} options={options} onChange={handleChange} />;
     }
 
-    // Misode: McdocRenderer.tsx:209-214 - Color picker for hex colors
+    // Misode: McdocRenderer.tsx:209-214
     if (colorKind === "hex_rgb") {
         return (
             <>
@@ -77,11 +77,10 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
         );
     }
 
-    // Misode: McdocRenderer.tsx:225 - Plain input
-    return <input type="text" value={nodeValue} onInput={(e) => handleChange(e.currentTarget.value)} />;
+    // Misode: McdocRenderer.tsx:225 - Textarea with field-sizing for multiline support
+    return <textarea rows={1} value={nodeValue} onInput={(e) => handleChange(e.currentTarget.value)} />;
 }
 
-// Misode: McdocRenderer.tsx:189-195
 function getCompletions(type: StringType, node: JsonStringNode | undefined, ctx: NodeProps<StringType>["ctx"], excludeStrings?: string[]) {
     const offset = node && JsonStringNode.is(node) ? node.range.start : 0;
     const values = getValues(type, { ...ctx, offset })

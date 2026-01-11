@@ -143,15 +143,19 @@ button.toggle {
 .node-header {
     display: inline-flex;
     position: relative;
-    align-items: center;
+    align-items: start;
     width: 100%;
 }
 
 .node-header > * {
-    height: 24px;
+    min-height: 24px;
     border: 1px solid;
     color: var(--node-text);
     border-color: var(--node-border);
+}
+
+.node-header:not(:has(textarea)) > * {
+    height: 24px;
 }
 
 
@@ -251,12 +255,19 @@ button.toggle {
 }
 
 .node-header > textarea {
+    field-sizing: content;
     min-width: 150px;
     min-height: 24px;
+    max-height: 200px;
     font-size: 10px;
-    padding-left: 6px;
-    padding-top: 4px;
+    font-family: inherit;
+    line-height: 14px;
+    padding: 4px 6px;
     background-color: var(--node-background-input);
+    border: 1px solid var(--node-border);
+    color: var(--node-text);
+    resize: none;
+    white-space: pre-wrap;
 }
 
 .node-header > select,
@@ -640,7 +651,7 @@ button.move:disabled svg {
     align-items: center;
     height: 24px;
     padding: 0 6px;
-    line-height: 22px;
+    line-height: 16px;
     white-space: nowrap;
     user-select: none;
     background-color: var(--node-background-label);

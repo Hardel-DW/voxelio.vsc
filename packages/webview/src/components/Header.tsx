@@ -2,7 +2,7 @@ import type { JSX } from "preact";
 import { useState } from "preact/hooks";
 import { Octicon } from "@/components/Icons.tsx";
 import { VersionSelect } from "@/components/VersionSelect.tsx";
-import { type UiScale, applyUiScale, cycleUiScale, getUiScale, postMessage } from "@/lib/vscode.ts";
+import { applyUiScale, cycleUiScale, getUiScale, postMessage, type UiScale } from "@/lib/vscode.ts";
 
 const SCALE_LABELS: Record<UiScale, string> = {
     small: "Small",
@@ -22,9 +22,13 @@ export function Header({ packFormat, versionId, onPackFormatChange }: HeaderProp
         applyUiScale(saved);
         return saved;
     });
+    const [isReloading, setIsReloading] = useState(false);
 
     const handleReload = (): void => {
+        if (isReloading) return;
+        setIsReloading(true);
         postMessage({ type: "refreshRegistries" });
+        setTimeout(() => setIsReloading(false), 2000);
     };
 
     const handleScaleToggle = (): void => {
@@ -37,15 +41,14 @@ export function Header({ packFormat, versionId, onPackFormatChange }: HeaderProp
             <div class="header-row">
                 <VersionSelect packFormat={packFormat} versionId={versionId} onSelect={onPackFormatChange} />
                 <div class="header-actions">
+                    <button type="button" class="header-scale" onClick={handleScaleToggle}>
+                        Text Size: {SCALE_LABELS[scale]}
+                    </button>
                     <button
                         type="button"
-                        class="header-reload"
-                        onClick={handleScaleToggle}
-                        title={`UI Scale: ${SCALE_LABELS[scale]}`}
-                    >
-                        {Octicon.text_size}
-                    </button>
-                    <button type="button" class="header-reload" onClick={handleReload} title="Reload registries">
+                        class={`header-icon ${isReloading ? "rotating" : ""}`}
+                        onClick={handleReload}
+                        title="Reload registries">
                         {Octicon.reload}
                     </button>
                 </div>

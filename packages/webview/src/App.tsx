@@ -1,4 +1,5 @@
 import type { DocAndNode } from "@spyglassmc/core";
+import { dissectUri } from "@spyglassmc/java-edition/lib/binder/index.js";
 import type { JSX } from "preact";
 import { useSyncExternalStore } from "preact/compat";
 import { useState } from "preact/hooks";
@@ -7,6 +8,8 @@ import { Footer } from "@/components/Footer.tsx";
 import { Header } from "@/components/Header.tsx";
 import { Octicon } from "@/components/Icons.tsx";
 import { JsonFileView } from "@/components/JsonFileView.tsx";
+import { WikiLink } from "@/components/WikiLink.tsx";
+import { getWikiLabel, getWikiUrl } from "@/config.ts";
 import { getPersistedState, postMessage, setPersistedState } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
@@ -94,8 +97,6 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
 
 async function tryCreateService(): Promise<void> {
     const { version, registries, service, loading } = state;
-
-    // Wait until we have version and registries, and service isn't already being created
     if (!version || !registries || service || loading) return;
 
     setState({ loading: true });
@@ -115,8 +116,6 @@ async function handleFile(realUri: string, content: string): Promise<void> {
     if (!datapackPath) return;
 
     const virtualUri = `file:///root/${datapackPath}`;
-
-    // Unwatch previous file
     if (oldVirtualUri && oldVirtualUri !== virtualUri) {
         service.unwatchFile(oldVirtualUri, onDocumentUpdated);
     }
@@ -133,8 +132,6 @@ async function handleFile(realUri: string, content: string): Promise<void> {
 
 function onDocumentUpdated(docAndNode: DocAndNode): void {
     setState({ docAndNode });
-
-    // Send updated content back to VS Code
     const { realUri, service, virtualUri } = state;
     if (realUri && service && virtualUri) {
         service.readFile(virtualUri).then((content) => {
@@ -244,12 +241,26 @@ export function App(): JSX.Element | null {
         postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage);
     };
 
+    const getResourceType = (): string | undefined => {
+        if (!docAndNode || !service) return undefined;
+        if (docAndNode.doc.uri.endsWith("/pack.mcmeta")) return "pack_mcmeta";
+        const ctx = service.getCheckerContext(docAndNode.doc, []);
+        return dissectUri(docAndNode.doc.uri, ctx)?.category;
+    };
+
+    const resourceType = getResourceType();
+    const wikiUrl = getWikiUrl(resourceType);
+    const wikiLabel = getWikiLabel(resourceType);
+
     return (
         <div class="editor-layout">
             <div class="editor-content">
                 <Header packFormat={packFormat} versionId={version.id} onPackFormatChange={handlePackFormatChange} />
                 {docAndNode ? (
-                    <JsonFileView docAndNode={docAndNode} service={service} />
+                    <>
+                        <JsonFileView docAndNode={docAndNode} service={service} />
+                        {wikiUrl && wikiLabel && <WikiLink url={wikiUrl} label={wikiLabel} />}
+                    </>
                 ) : (
                     <EmptyState
                         icon={Octicon.file_code}

@@ -6,13 +6,32 @@
 
 body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 10px;
+    font-size: var(--size-font);
     color: var(--vscode-foreground);
     background: var(--vscode-editor-background);
 }
 
-
 :root {
+    /* Scale sizes - default (small) */
+    --size-font: 10px;
+    --size-font-lg: 12px;
+    --size-font-sm: 9px;
+    --size-height: 24px;
+    --size-height-half: 12px;
+    --size-icon: 24px;
+    --size-icon-sm: 10px;
+    --size-gap: 2px;
+    --size-gap-lg: 8px;
+    --size-padding: 4px;
+    --size-padding-lg: 6px;
+    --size-padding-xl: 8px;
+    --size-indent: 12px;
+    --size-radius: 3px;
+    --size-radius-lg: 6px;
+    --size-line-height: 14px;
+    --size-line-height-lg: 16px;
+
+    /* Colors */
     --node-border: var(--vscode-input-border, #3f3f3f);
     --node-background-label: var(--vscode-sideBar-background, #1b1b1b);
     --node-background-input: var(--vscode-input-background, #272727);
@@ -41,12 +60,54 @@ body {
     --category-pool-background: #21331d;
 }
 
+/* medium scale */
+body[data-scale="medium"] {
+    --size-font: 11px;
+    --size-font-lg: 13px;
+    --size-font-sm: 10px;
+    --size-height: 26px;
+    --size-height-half: 13px;
+    --size-icon: 26px;
+    --size-icon-sm: 11px;
+    --size-gap: 2px;
+    --size-gap-lg: 9px;
+    --size-padding: 4px;
+    --size-padding-lg: 6px;
+    --size-padding-xl: 9px;
+    --size-indent: 13px;
+    --size-radius: 3px;
+    --size-radius-lg: 6px;
+    --size-line-height: 15px;
+    --size-line-height-lg: 17px;
+}
+
+
+/* large scale */
+body[data-scale="large"] {
+    --size-font: 12px;
+    --size-font-lg: 14px;
+    --size-font-sm: 11px;
+    --size-height: 28px;
+    --size-height-half: 14px;
+    --size-icon: 28px;
+    --size-icon-sm: 12px;
+    --size-gap: 3px;
+    --size-gap-lg: 10px;
+    --size-padding: 5px;
+    --size-padding-lg: 7px;
+    --size-padding-xl: 10px;
+    --size-indent: 14px;
+    --size-radius: 4px;
+    --size-radius-lg: 7px;
+    --size-line-height: 16px;
+    --size-line-height-lg: 18px;
+}
 /* Message styles for loading/error states */
 .loading-message,
 .error-message,
 .info-panel {
     padding: 16px;
-    font-size: 13px;
+    font-size: var(--size-font-lg);
 }
 
 .loading-message {
@@ -60,24 +121,24 @@ body {
 .info-panel {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--size-gap-lg);
     color: var(--vscode-foreground);
 }
 
 .warning-message {
     padding: 16px;
-    font-size: 13px;
+    font-size: var(--size-font-lg);
     color: var(--vscode-editorWarning-foreground, #cca700);
 }
 
 .info-panel .hint {
     color: var(--vscode-descriptionForeground, #b4b4b4);
-    font-size: 12px;
+    font-size: var(--size-font);
 }
 
 /* File view container */
 .file-view {
-    padding: 8px;
+    padding: var(--size-gap-lg);
 }
 
 /* Error indicator for missing required fields */
@@ -85,12 +146,12 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    min-width: 24px;
-    height: 24px;
+    width: var(--size-icon);
+    min-width: var(--size-icon);
+    height: var(--size-height);
     border: 1px solid var(--node-remove-border);
     background-color: var(--node-remove);
-    border-radius: 3px 0 0 3px;
+    border-radius: var(--size-radius) 0 0 var(--size-radius);
     cursor: help;
     position: relative;
 }
@@ -109,14 +170,14 @@ body {
     z-index: 100;
     top: 100%;
     left: 0;
-    margin-top: 4px;
-    padding: 6px 10px;
-    font-size: 12px;
+    margin-top: var(--size-padding);
+    padding: var(--size-padding-lg) var(--size-padding-xl);
+    font-size: var(--size-font);
     white-space: nowrap;
     color: var(--node-text);
     background-color: var(--node-background-label);
     border: 1px solid var(--node-remove-border);
-    border-radius: 4px;
+    border-radius: var(--size-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -125,8 +186,8 @@ button.toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    min-width: 24px;
+    width: var(--size-icon);
+    min-width: var(--size-icon);
     padding: 0;
 }
 
@@ -134,10 +195,10 @@ button.toggle {
 .node-count {
     display: inline-flex;
     align-items: center;
-    padding: 0 4px;
-    height: 24px;
+    padding: 0 var(--size-padding);
+    height: var(--size-height);
     color: var(--node-text-dimmed);
-    font-size: 10px;
+    font-size: var(--size-font);
 }
 
 .node-header {
@@ -148,14 +209,14 @@ button.toggle {
 }
 
 .node-header > * {
-    min-height: 24px;
+    min-height: var(--size-height);
     border: 1px solid;
     color: var(--node-text);
     border-color: var(--node-border);
 }
 
 .node-header:not(:has(textarea)) > * {
-    height: 24px;
+    height: var(--size-height);
 }
 
 
@@ -164,12 +225,12 @@ button.toggle {
     position: absolute;
     top: 100%;
     left: 0;
-    font-size: 10px;
+    font-size: var(--size-font);
     line-height: 1.3;
     z-index: 100;
-    margin-top: 4px;
-    padding: 4px 6px;
-    border-radius: 4px;
+    margin-top: var(--size-padding);
+    padding: var(--size-padding) var(--size-padding-lg);
+    border-radius: var(--size-radius);
     border: 1px solid;
     color: var(--node-text-dimmed);
     border-color: var(--node-border);
@@ -199,7 +260,7 @@ button.toggle {
 .autocomplete {
     position: relative;
     display: inline-flex;
-    height: 24px;
+    height: var(--size-height);
 }
 
 .autocomplete input {
@@ -219,13 +280,13 @@ button.toggle {
     list-style: none;
     background-color: var(--node-background-label);
     border: 1px solid var(--node-border);
-    border-radius: 3px;
+    border-radius: var(--size-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     z-index: 100;
 }
 
 .autocomplete-dropdown li {
-    padding: 4px 6px;
+    padding: var(--size-padding) var(--size-padding-lg);
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
@@ -242,12 +303,12 @@ button.toggle {
 
 .node-header > input,
 .node-header input {
-    font-size: 10px;
-    padding-left: 6px;
+    font-size: var(--size-font);
+    padding-left: var(--size-padding-lg);
     background-color: var(--node-background-input);
     border: 1px solid var(--node-border);
     color: var(--node-text);
-    height: 24px;
+    height: var(--size-height);
 }
 
 .node-header > input[type="color"] {
@@ -257,12 +318,12 @@ button.toggle {
 .node-header > textarea {
     field-sizing: content;
     min-width: 150px;
-    min-height: 24px;
+    min-height: var(--size-height);
     max-height: 200px;
-    font-size: 10px;
+    font-size: var(--size-font);
     font-family: inherit;
-    line-height: 14px;
-    padding: 4px 6px;
+    line-height: var(--size-line-height);
+    padding: var(--size-padding) var(--size-padding-lg);
     background-color: var(--node-background-input);
     border: 1px solid var(--node-border);
     color: var(--node-text);
@@ -272,20 +333,20 @@ button.toggle {
 
 .node-header > select,
 .node-header select {
-    font-size: 10px;
-    padding-left: 4px;
+    font-size: var(--size-font);
+    padding-left: var(--size-padding);
     background-color: var(--node-background-input);
     border: 1px solid var(--node-border);
     color: var(--node-text);
-    height: 24px;
+    height: var(--size-height);
 }
 
 .node-header button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    padding: 0 6px;
+    font-size: var(--size-font);
+    padding: 0 var(--size-padding-lg);
     white-space: nowrap;
     user-select: none;
     cursor: pointer;
@@ -303,8 +364,8 @@ button.toggle {
 .node-header > a {
     display: flex;
     align-items: center;
-    font-size: 10px;
-    padding: 0 6px;
+    font-size: var(--size-font);
+    padding: 0 var(--size-padding-lg);
     white-space: nowrap;
     user-select: none;
     cursor: pointer;
@@ -330,13 +391,13 @@ button.toggle {
 
 .node-header > *:first-child,
 .node-header > .node-icon:first-child + * {
-    border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
+    border-top-left-radius: var(--size-radius);
+    border-bottom-left-radius: var(--size-radius);
 }
 
 .node-header > *:last-child {
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+    border-top-right-radius: var(--size-radius);
+    border-bottom-right-radius: var(--size-radius);
 }
 
 .node-header > * {
@@ -379,15 +440,15 @@ button.remove:enabled:hover {
 }
 
 .node-header > button.add:last-child {
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
+    border-top-right-radius: var(--size-radius-lg);
+    border-bottom-right-radius: var(--size-radius-lg);
 }
 
 .node-move {
     display: flex;
     flex-direction: column;
-    width: 24px;
-    height: 24px;
+    width: var(--size-icon);
+    height: var(--size-height);
 }
 
 button.move {
@@ -397,12 +458,12 @@ button.move {
     align-items: center;
     justify-content: center;
     padding: 0;
-    min-height: 12px;
+    min-height: var(--size-height-half);
 }
 
 button.move svg {
-    width: 10px;
-    height: 10px;
+    width: var(--size-icon-sm);
+    height: var(--size-icon-sm);
     fill: var(--node-text);
 }
 
@@ -430,8 +491,8 @@ button.move:disabled svg {
     background-color: var(--node-background-label);
     color: var(--node-text);
     text-align: center;
-    border-radius: 6px;
-    padding: 8px 4px;
+    border-radius: var(--size-radius-lg);
+    padding: var(--size-gap-lg) var(--size-padding);
     position: absolute;
     z-index: 100;
     top: 125%;
@@ -439,7 +500,7 @@ button.move:disabled svg {
     margin-left: -120px;
     border: 1px solid var(--node-border);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    font-size: 11px;
+    font-size: var(--size-font);
 }
 
 .node-icon .icon-popup::after {
@@ -459,10 +520,10 @@ button.move:disabled svg {
 }
 
 .node-icon svg {
-    height: 24px;
-    width: 24px;
-    min-width: 24px;
-    margin-left: 6px;
+    height: var(--size-icon);
+    width: var(--size-icon);
+    min-width: var(--size-icon);
+    margin-left: var(--size-padding-lg);
     cursor: pointer;
 }
 
@@ -484,12 +545,12 @@ button.move:disabled svg {
     top: 100%;
     width: min-content;
     height: unset;
-    margin-top: 4px;
-    margin-left: 4px;
+    margin-top: var(--size-padding);
+    margin-left: var(--size-padding);
     z-index: 1;
     color: var(--text-1);
-    font-size: 10px;
-    border-radius: 4px;
+    font-size: var(--size-font);
+    border-radius: var(--size-radius);
     background-color: var(--background-6);
     box-shadow: 0 1px 5px -2px #000;
 }
@@ -499,25 +560,25 @@ button.move:disabled svg {
     position: absolute;
     bottom: 100%;
     left: 0;
-    margin-left: 6px;
+    margin-left: var(--size-padding-lg);
     border-width: 5px;
     border-style: solid;
     border-color: transparent transparent var(--background-6) transparent;
 }
 
 .menu-item {
-    padding: 4px;
+    padding: var(--size-padding);
     display: flex;
     align-items: center;
     white-space: normal;
 }
 
 .menu-item > * {
-    margin-right: 4px;
+    margin-right: var(--size-padding);
 }
 
 .menu-item .btn {
-    padding: 8px;
+    padding: var(--size-gap-lg);
     box-shadow: unset;
 }
 
@@ -529,14 +590,14 @@ button.move:disabled svg {
 .node, .node-root, .node-body-flat {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--size-gap);
 }
 
 .node-body {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding-left: 12px;
+    gap: var(--size-gap);
+    padding-left: var(--size-indent);
     border-left: 2px solid var(--node-indent-border);
 }
 
@@ -544,10 +605,10 @@ button.move:disabled svg {
 .node-body-flat > .node[data-category] {
     width: 100%;
     min-width: max-content;
-    padding: 3px;
+    padding: var(--size-radius);
     padding-left: 0px;
     border: 1px solid var(--node-border);
-    border-radius: 3px;
+    border-radius: var(--size-radius);
 }
 
 .node-body > .node[data-category] > .node-body {
@@ -649,9 +710,9 @@ button.move:disabled svg {
 .node-key {
     display: inline-flex;
     align-items: center;
-    height: 24px;
-    padding: 0 6px;
-    line-height: 16px;
+    height: var(--size-height);
+    padding: 0 var(--size-padding-lg);
+    line-height: var(--size-line-height-lg);
     white-space: nowrap;
     user-select: none;
     background-color: var(--node-background-label);
@@ -684,12 +745,21 @@ button.move:disabled svg {
     min-height: 0;
 }
 
-/* Header */
+/* Header - always small size */
 .editor-header {
+    --size-font: 10px;
+    --size-font-lg: 12px;
+    --size-height: 24px;
+    --size-icon: 24px;
+    --size-gap: 2px;
+    --size-gap-lg: 8px;
+    --size-padding: 4px;
+    --size-radius: 3px;
+
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 8px;
+    gap: var(--size-gap-lg);
+    padding: var(--size-gap-lg);
 }
 
 .header-row {
@@ -701,17 +771,17 @@ button.move:disabled svg {
 .header-info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--size-gap);
 }
 
 .header-title {
-    font-size: 12px;
+    font-size: var(--size-font-lg);
     font-weight: 600;
     color: var(--node-text);
 }
 
 .header-subtitle {
-    font-size: 10px;
+    font-size: var(--size-font);
     color: var(--node-text-dimmed);
 }
 
@@ -722,15 +792,20 @@ button.move:disabled svg {
     opacity: 0.3;
 }
 
+.header-actions {
+    display: flex;
+    gap: var(--size-gap);
+}
+
 .header-reload {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: var(--size-icon);
+    height: var(--size-icon);
     padding: 0;
     border: 1px solid var(--node-border);
-    border-radius: 4px;
+    border-radius: var(--size-radius);
     background-color: var(--node-background-input);
     cursor: pointer;
     transition: background-color 0.15s;
@@ -755,7 +830,7 @@ button.move:disabled svg {
     align-items: center;
     justify-content: center;
     gap: 16px;
-    padding: 8px 12px;
+    padding: var(--size-gap-lg) var(--size-indent);
     background-color: var(--node-background-label);
     border-top: 1px solid var(--node-border);
 }
@@ -763,12 +838,12 @@ button.move:disabled svg {
 .footer-link {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    font-size: 10px;
+    gap: var(--size-padding-lg);
+    padding: var(--size-padding) var(--size-gap-lg);
+    font-size: var(--size-font);
     color: var(--node-text-dimmed);
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: var(--size-radius);
     transition: color 0.15s, background-color 0.15s;
 }
 
@@ -820,15 +895,15 @@ button.move:disabled svg {
 }
 
 .empty-state-title {
-    margin: 0 0 4px;
-    font-size: 14px;
+    margin: 0 0 var(--size-padding);
+    font-size: var(--size-font-lg);
     font-weight: 500;
     color: var(--node-text);
 }
 
 .empty-state-description {
     margin: 0;
-    font-size: 11px;
+    font-size: var(--size-font);
     color: var(--node-text-dimmed);
     text-align: center;
     max-width: 200px;
@@ -842,11 +917,11 @@ button.move:disabled svg {
 .version-select-trigger {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 4px 8px;
+    gap: var(--size-gap);
+    padding: var(--size-padding) var(--size-gap-lg);
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: var(--size-radius);
     cursor: pointer;
     text-align: left;
     transition: background-color 0.15s, border-color 0.15s;
@@ -858,13 +933,13 @@ button.move:disabled svg {
 }
 
 .version-select-title {
-    font-size: 12px;
+    font-size: var(--size-font-lg);
     font-weight: 600;
     color: var(--node-text);
 }
 
 .version-select-subtitle {
-    font-size: 10px;
+    font-size: var(--size-font);
     color: var(--node-text-dimmed);
 }
 
@@ -873,11 +948,11 @@ button.move:disabled svg {
     top: 100%;
     left: 0;
     z-index: 100;
-    margin-top: 4px;
+    margin-top: var(--size-padding);
     min-width: 160px;
     background-color: var(--node-background-label);
     border: 1px solid var(--node-border);
-    border-radius: 4px;
+    border-radius: var(--size-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -888,8 +963,8 @@ button.move:disabled svg {
 
 .version-select-tab {
     flex: 1;
-    padding: 6px 8px;
-    font-size: 10px;
+    padding: var(--size-padding-lg) var(--size-gap-lg);
+    font-size: var(--size-font);
     background: transparent;
     border: none;
     color: var(--node-text-dimmed);
@@ -909,7 +984,7 @@ button.move:disabled svg {
 
 .version-select-list {
     margin: 0;
-    padding: 4px 0;
+    padding: var(--size-padding) 0;
     list-style: none;
     max-height: 200px;
     overflow-y: auto;
@@ -920,8 +995,8 @@ button.move:disabled svg {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 4px 8px;
-    font-size: 10px;
+    padding: var(--size-padding) var(--size-gap-lg);
+    font-size: var(--size-font);
     background: transparent;
     border: none;
     color: var(--node-text);

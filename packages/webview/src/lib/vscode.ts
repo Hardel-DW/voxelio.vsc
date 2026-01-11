@@ -1,8 +1,11 @@
 import type { WebviewMessage } from "@/types.ts";
 
+export type UiScale = "small" | "medium" | "large";
+
 interface PersistedState {
     realUri?: string;
     virtualUri?: string;
+    uiScale?: UiScale;
 }
 
 interface VsCodeApi {
@@ -33,4 +36,29 @@ export function requestFile(uri: string): void {
 
 export function saveFile(uri: string, content: string): void {
     postMessage({ type: "saveFile", uri, content });
+}
+
+const SCALE_ORDER: UiScale[] = ["small", "medium", "large"];
+
+export function getUiScale(): UiScale {
+    return getPersistedState()?.uiScale ?? "small";
+}
+
+export function setUiScale(scale: UiScale): void {
+    const state = getPersistedState() ?? {};
+    setPersistedState({ ...state, uiScale: scale });
+    applyUiScale(scale);
+}
+
+export function cycleUiScale(): UiScale {
+    const current = getUiScale();
+    const currentIndex = SCALE_ORDER.indexOf(current);
+    const nextIndex = (currentIndex + 1) % SCALE_ORDER.length;
+    const next = SCALE_ORDER[nextIndex];
+    setUiScale(next);
+    return next;
+}
+
+export function applyUiScale(scale: UiScale): void {
+    document.body.dataset.scale = scale === "small" ? "" : scale;
 }

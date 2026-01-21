@@ -49,5 +49,4 @@ export type WebviewMessage =
     | { readonly type: "refreshRegistries" }
     | { readonly type: "changePackFormat"; readonly packFormat: number }
     | { readonly type: "requestFile"; readonly uri: string }
-    | { readonly type: "saveFile"; readonly uri: string; readonly content: string }
-    | { readonly type: "browseDatapacks" };
+    | { readonly type: "saveFile"; readonly uri: string; readonly content: string };

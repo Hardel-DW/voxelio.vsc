@@ -21,6 +21,11 @@ type PackState =
     | { status: "invalid"; reason: string }
     | { status: "ready"; packFormat: number; version: VersionConfig };
 
+interface PendingFile {
+    uri: string;
+    content: string;
+}
+
 interface AppState {
     packState: PackState;
     registries: RegistriesPayload | null;
@@ -30,6 +35,7 @@ interface AppState {
     realUri: string | null;
     loading: boolean;
     error: string | null;
+    pendingFile: PendingFile | null;
 }
 
 const initialState: AppState = {
@@ -40,7 +46,8 @@ const initialState: AppState = {
     virtualUri: null,
     realUri: null,
     loading: false,
-    error: null
+    error: null,
+    pendingFile: null
 };
 
 let state = initialState;
@@ -117,13 +124,17 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
 }
 
 async function tryCreateService(): Promise<void> {
-    const { packState, registries, service, loading } = state;
+    const { packState, registries, service, loading, pendingFile, virtualUri } = state;
     if (packState.status !== "ready" || !registries || service || loading) return;
 
     setState({ loading: true });
     try {
         const newService = await SpyglassServiceClass.create(packState.version, registries);
         setState({ service: newService, loading: false });
+
+        if (pendingFile) {
+            await processFile(newService, pendingFile.uri, pendingFile.content, virtualUri);
+        }
     } catch (err) {
         setState({ error: err instanceof Error ? err.message : "Failed to init", loading: false });
     }
@@ -131,8 +142,16 @@ async function tryCreateService(): Promise<void> {
 
 async function handleFile(realUri: string, content: string): Promise<void> {
     const { service, virtualUri: oldVirtualUri } = state;
-    if (!service) return;
 
+    if (!service) {
+        setState({ pendingFile: { uri: realUri, content } });
+        return;
+    }
+
+    await processFile(service, realUri, content, oldVirtualUri);
+}
+
+async function processFile(service: SpyglassService, realUri: string, content: string, oldVirtualUri: string | null): Promise<void> {
     const datapackPath = extractDatapackPath(realUri);
     if (!datapackPath) return;
 
@@ -145,7 +164,7 @@ async function handleFile(realUri: string, content: string): Promise<void> {
     const docAndNode = await service.openFile(virtualUri);
 
     if (docAndNode) {
-        setState({ docAndNode, virtualUri, realUri });
+        setState({ docAndNode, virtualUri, realUri, pendingFile: null });
         setPersistedState({ realUri, virtualUri });
         service.watchFile(virtualUri, onDocumentUpdated);
     }
@@ -200,29 +219,14 @@ export function App(): JSX.Element | null {
 
     const { packState, registries, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
 
-    if (packState.status === "loading") {
-        return (
-            <div class="editor-layout">
-                <EmptyState icon={Octicon.loader} title="Waiting for pack info..." />
-                <Footer />
-            </div>
-        );
-    }
-
-    if (packState.status === "notFound") {
+    if (packState.status === "loading" || packState.status === "notFound") {
         return (
             <div class="editor-layout">
                 <EmptyState
-                    icon={Octicon.package_icon}
-                    title="No pack.mcmeta found"
-                    description="Place a pack.mcmeta file at the workspace root, or browse for datapacks in subfolders.">
-                    <button
-                        type="button"
-                        class="browse-button"
-                        onClick={() => postMessage({ type: "browseDatapacks" } satisfies WebviewMessage)}>
-                        Browse Datapacks
-                    </button>
-                </EmptyState>
+                    icon={Octicon.file_code}
+                    title="No file open"
+                    description="Open a JSON file inside a datapack to start editing."
+                />
                 <Footer />
             </div>
         );
@@ -231,14 +235,7 @@ export function App(): JSX.Element | null {
     if (packState.status === "invalid") {
         return (
             <div class="editor-layout">
-                <EmptyState icon={Octicon.alert} title="Invalid pack.mcmeta" description={packState.reason}>
-                    <button
-                        type="button"
-                        class="browse-button"
-                        onClick={() => postMessage({ type: "browseDatapacks" } satisfies WebviewMessage)}>
-                        Browse Datapacks
-                    </button>
-                </EmptyState>
+                <EmptyState icon={Octicon.alert} title="Invalid pack.mcmeta" description={packState.reason} />
                 <Footer />
             </div>
         );

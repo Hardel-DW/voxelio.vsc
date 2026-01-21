@@ -45,23 +45,22 @@ export class NodeEditorProvider implements WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(this.handleMessage.bind(this));
 
         this.registerEditorListeners();
+        webviewView.onDidChangeVisibility(() => this.onVisibilityChanged());
         webviewView.onDidDispose(() => this.dispose());
     }
 
-    private async initializeWebview(): Promise<void> {
-        const result = await this.packDetector.detect();
-        const packStatus = this.toPackStatus(result);
-
-        this.sendMessage({ type: "init", payload: { pack: packStatus } });
-
-        if (packStatus.state !== "found" || result.status !== "found") {
-            return;
+    private onVisibilityChanged(): void {
+        if (this.view?.visible && window.activeTextEditor) {
+            this.processEditor(window.activeTextEditor);
         }
+    }
 
-        this.currentPackFormat = packStatus.packFormat;
-        this.currentPackRoot = Uri.joinPath(result.pack.uri, "..");
-        this.setupFileWatcher();
-        await this.loadRegistries(packStatus.version);
+    private initializeWebview(): void {
+        this.sendMessage({ type: "init", payload: { pack: { state: "notFound" } } });
+
+        if (window.activeTextEditor) {
+            this.processEditor(window.activeTextEditor);
+        }
     }
 
     private toPackStatus(result: import("@/types.ts").PackDetectionResult): PackStatus {
@@ -120,54 +119,6 @@ export class NodeEditorProvider implements WebviewViewProvider {
         this.view?.show(true);
     }
 
-    async setDatapackRoot(uri: Uri): Promise<void> {
-        const result = await this.packDetector.detectAt(uri);
-        const packStatus = this.toPackStatus(result);
-
-        this.sendMessage({ type: "init", payload: { pack: packStatus } });
-
-        if (packStatus.state !== "found") {
-            window.showErrorMessage(`Mi-Node: ${packStatus.state === "invalid" ? packStatus.reason : "No pack.mcmeta found"}`);
-            return;
-        }
-
-        this.currentPackFormat = packStatus.packFormat;
-        this.currentPackRoot = uri;
-        this.setupFileWatcher();
-        await this.loadRegistries(packStatus.version);
-        this.focus();
-    }
-
-    async browseDatapacks(): Promise<void> {
-        const files = await this.packDetector.findAllPackMcmeta();
-
-        if (files.length === 0) {
-            window.showInformationMessage("Mi-Node: No pack.mcmeta found in workspace");
-            return;
-        }
-
-        const items = files.map((uri) => ({
-            label: this.getRelativePath(uri),
-            uri: Uri.joinPath(uri, "..")
-        }));
-
-        const selected = await window.showQuickPick(items, {
-            placeHolder: "Select a datapack root folder",
-            title: "Browse Datapacks"
-        });
-
-        if (selected) {
-            await this.setDatapackRoot(selected.uri);
-        }
-    }
-
-    private getRelativePath(uri: Uri): string {
-        const workspaceFolder = workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) return uri.fsPath;
-
-        return workspace.asRelativePath(uri, false);
-    }
-
     dispose(): void {
         for (const disposable of this.disposables) {
             disposable.dispose();
@@ -180,10 +131,6 @@ export class NodeEditorProvider implements WebviewViewProvider {
             window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChanged(editor)),
             workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e))
         );
-
-        if (window.activeTextEditor) {
-            this.onActiveEditorChanged(window.activeTextEditor);
-        }
     }
 
     private setupFileWatcher(): void {
@@ -224,14 +171,51 @@ export class NodeEditorProvider implements WebviewViewProvider {
         await this.loadRegistries(version);
     }
 
-    private onActiveEditorChanged(editor: TextEditor | undefined): void {
+    private async onActiveEditorChanged(editor: TextEditor | undefined): Promise<void> {
+        if (!this.view?.visible) return;
+        await this.processEditor(editor);
+    }
+
+    private async processEditor(editor: TextEditor | undefined): Promise<void> {
         if (!editor || !this.isDatapackJsonFile(editor.document)) {
             this.currentFileUri = undefined;
             return;
         }
 
-        this.currentFileUri = editor.document.uri.toString();
+        const fileUri = editor.document.uri;
+        this.currentFileUri = fileUri.toString();
+
+        await this.detectAndSwitchPack(fileUri);
         this.sendFileContent(editor.document);
+    }
+
+    private async detectAndSwitchPack(fileUri: Uri): Promise<void> {
+        const result = await this.packDetector.findPackRootFromFile(fileUri);
+
+        if (result.status !== "found") {
+            this.sendMessage({ type: "init", payload: { pack: this.toPackStatus(result) } });
+            return;
+        }
+
+        const newPackRoot = Uri.joinPath(result.pack.uri, "..");
+        const isSamePack = this.currentPackRoot?.fsPath === newPackRoot.fsPath;
+
+        if (isSamePack && this.currentPackFormat === result.pack.packFormat) {
+            return;
+        }
+
+        const packStatus = this.toPackStatus(result);
+        if (packStatus.state !== "found") {
+            this.sendMessage({ type: "init", payload: { pack: packStatus } });
+            return;
+        }
+
+        this.currentPackRoot = newPackRoot;
+        this.currentPackFormat = result.pack.packFormat;
+        this.setupFileWatcher();
+
+        this.sendMessage({ type: "init", payload: { pack: packStatus } });
+        await this.loadRegistries(packStatus.version);
     }
 
     private onDocumentChanged(event: TextDocumentChangeEvent): void {
@@ -274,9 +258,6 @@ export class NodeEditorProvider implements WebviewViewProvider {
                 break;
             case "saveFile":
                 await this.handleSaveFile(message.uri, message.content);
-                break;
-            case "browseDatapacks":
-                await this.browseDatapacks();
                 break;
         }
     }

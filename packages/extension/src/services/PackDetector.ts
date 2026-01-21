@@ -13,30 +13,30 @@ interface PackMcmeta {
 }
 
 export class PackDetector {
-    async detect(): Promise<PackDetectionResult> {
-        const files = await vscode.workspace.findFiles("pack.mcmeta", null, 1);
-
-        if (files.length === 0) {
+    async findPackRootFromFile(fileUri: vscode.Uri): Promise<PackDetectionResult> {
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        if (!workspaceRoot) {
             return { status: "notFound" };
         }
 
-        const uri = files[0];
-        return this.validatePackMcmeta(uri);
-    }
+        let currentDir = vscode.Uri.joinPath(fileUri, "..");
 
-    async detectAt(uri: vscode.Uri): Promise<PackDetectionResult> {
-        const packUri = vscode.Uri.joinPath(uri, "pack.mcmeta");
+        while (currentDir.fsPath.length >= workspaceRoot.length) {
+            const packMcmetaUri = vscode.Uri.joinPath(currentDir, "pack.mcmeta");
 
-        try {
-            await vscode.workspace.fs.stat(packUri);
-            return this.validatePackMcmeta(packUri);
-        } catch {
-            return { status: "invalid", uri: packUri, reason: "pack.mcmeta not found in selected folder" };
+            try {
+                await vscode.workspace.fs.stat(packMcmetaUri);
+                return this.validatePackMcmeta(packMcmetaUri);
+            } catch {
+                const parentDir = vscode.Uri.joinPath(currentDir, "..");
+                if (parentDir.fsPath === currentDir.fsPath) {
+                    break;
+                }
+                currentDir = parentDir;
+            }
         }
-    }
 
-    async findAllPackMcmeta(): Promise<vscode.Uri[]> {
-        return vscode.workspace.findFiles("**/pack.mcmeta");
+        return { status: "notFound" };
     }
 
     private async validatePackMcmeta(uri: vscode.Uri): Promise<PackDetectionResult> {
@@ -63,9 +63,7 @@ export class PackDetector {
     async scanWorkspaceRegistries(packRoot?: vscode.Uri): Promise<RegistriesPayload> {
         const registries: MutableRegistries = {};
 
-        const jsonPattern = packRoot
-            ? new vscode.RelativePattern(packRoot, "data/**/*.json")
-            : "data/**/*.json";
+        const jsonPattern = packRoot ? new vscode.RelativePattern(packRoot, "data/**/*.json") : "data/**/*.json";
         const mcfunctionPattern = packRoot
             ? new vscode.RelativePattern(packRoot, "data/**/function/**/*.mcfunction")
             : "data/**/function/**/*.mcfunction";

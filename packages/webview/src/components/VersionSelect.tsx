@@ -66,6 +66,7 @@ interface VersionSelectProps {
 export function VersionSelect({ packFormat, versionId, onSelect }: VersionSelectProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
     const [packType, setPackType] = useState<PackType>("datapack");
+    const [customFormat, setCustomFormat] = useState("");
     const containerRef = useRef<HTMLDivElement>(null);
 
     const versions = packType === "datapack" ? DATAPACK_VERSIONS : RESOURCEPACK_VERSIONS;
@@ -87,6 +88,27 @@ export function VersionSelect({ packFormat, versionId, onSelect }: VersionSelect
 
     const handlePackTypeChange = (type: PackType): void => {
         setPackType(type);
+    };
+
+    const handleCustomFormatChange = (e: Event): void => {
+        const target = e.target as HTMLInputElement;
+        const filtered = target.value.replace(/[^0-9]/g, "").slice(0, 10);
+        setCustomFormat(filtered);
+    };
+
+    const handleCustomFormatSubmit = (): void => {
+        const parsed = Number.parseInt(customFormat, 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+            onSelect(parsed);
+            setCustomFormat("");
+            setIsOpen(false);
+        }
+    };
+
+    const handleCustomFormatKeyDown = (e: KeyboardEvent): void => {
+        if (e.key === "Enter") {
+            handleCustomFormatSubmit();
+        }
     };
 
     return (
@@ -124,6 +146,20 @@ export function VersionSelect({ packFormat, versionId, onSelect }: VersionSelect
                             </li>
                         ))}
                     </ul>
+                    <div class="version-select-custom">
+                        <input
+                            type="text"
+                            class="version-select-custom-input"
+                            placeholder="Custom format"
+                            value={customFormat}
+                            onInput={handleCustomFormatChange}
+                            onKeyDown={handleCustomFormatKeyDown}
+                            inputMode="numeric"
+                        />
+                        <button type="button" class="version-select-custom-btn" onClick={handleCustomFormatSubmit}>
+                            Update
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

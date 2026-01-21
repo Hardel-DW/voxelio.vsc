@@ -13,7 +13,7 @@ import { Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
-import type { ExtensionMessage, MutableRegistries, PackInfo, RegistriesPayload, WebviewMessage } from "@/types.ts";
+import type { ExtensionMessage, MutableRegistries, PackStatus, RegistriesPayload, WebviewMessage } from "@/types.ts";
 
 export class NodeEditorProvider implements WebviewViewProvider {
     static readonly viewType = "minode.nodeEditor";
@@ -24,16 +24,13 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private readonly disposables: Disposable[] = [];
     private fileWatcher?: FileSystemWatcher;
     private currentFileUri?: string;
-    private currentPackFormat: number;
+    private currentPackFormat?: number;
+    private currentPackRoot?: Uri;
     private isApplyingWebviewEdit = false;
 
-    constructor(
-        private readonly context: ExtensionContext,
-        packInfo: PackInfo
-    ) {
+    constructor(private readonly context: ExtensionContext) {
         this.cacheService = new CacheService(context);
         this.packDetector = new PackDetector();
-        this.currentPackFormat = packInfo.packFormat;
     }
 
     resolveWebviewView(webviewView: WebviewView): void {
@@ -52,19 +49,43 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private async initializeWebview(): Promise<void> {
-        const version = getVersionFromPackFormat(this.currentPackFormat);
+        const result = await this.packDetector.detect();
+        const packStatus = this.toPackStatus(result);
 
-        if (!version) {
-            this.sendMessage({ type: "init", payload: { packFormat: this.currentPackFormat, error: "Unknown version" } });
+        this.sendMessage({ type: "init", payload: { pack: packStatus } });
+
+        if (packStatus.state !== "found" || result.status !== "found") {
             return;
         }
 
-        this.sendMessage({ type: "init", payload: { packFormat: this.currentPackFormat, version } });
+        this.currentPackFormat = packStatus.packFormat;
+        this.currentPackRoot = Uri.joinPath(result.pack.uri, "..");
+        this.setupFileWatcher();
+        await this.loadRegistries(packStatus.version);
+    }
 
+    private toPackStatus(result: import("@/types.ts").PackDetectionResult): PackStatus {
+        if (result.status === "notFound") {
+            return { state: "notFound" };
+        }
+
+        if (result.status === "invalid") {
+            return { state: "invalid", reason: result.reason };
+        }
+
+        const version = getVersionFromPackFormat(result.pack.packFormat);
+        if (!version) {
+            return { state: "invalid", reason: `Unknown pack format: ${result.pack.packFormat}` };
+        }
+
+        return { state: "found", packFormat: result.pack.packFormat, version };
+    }
+
+    private async loadRegistries(version: import("@/types.ts").VersionConfig): Promise<void> {
         try {
             const [vanillaRegistries, workspaceRegistries] = await Promise.all([
                 this.cacheService.getRegistries(version),
-                this.packDetector.scanWorkspaceRegistries()
+                this.packDetector.scanWorkspaceRegistries(this.currentPackRoot)
             ]);
 
             const mergedRegistries = this.mergeRegistries(vanillaRegistries, workspaceRegistries);
@@ -99,6 +120,54 @@ export class NodeEditorProvider implements WebviewViewProvider {
         this.view?.show(true);
     }
 
+    async setDatapackRoot(uri: Uri): Promise<void> {
+        const result = await this.packDetector.detectAt(uri);
+        const packStatus = this.toPackStatus(result);
+
+        this.sendMessage({ type: "init", payload: { pack: packStatus } });
+
+        if (packStatus.state !== "found") {
+            window.showErrorMessage(`Mi-Node: ${packStatus.state === "invalid" ? packStatus.reason : "No pack.mcmeta found"}`);
+            return;
+        }
+
+        this.currentPackFormat = packStatus.packFormat;
+        this.currentPackRoot = uri;
+        this.setupFileWatcher();
+        await this.loadRegistries(packStatus.version);
+        this.focus();
+    }
+
+    async browseDatapacks(): Promise<void> {
+        const files = await this.packDetector.findAllPackMcmeta();
+
+        if (files.length === 0) {
+            window.showInformationMessage("Mi-Node: No pack.mcmeta found in workspace");
+            return;
+        }
+
+        const items = files.map((uri) => ({
+            label: this.getRelativePath(uri),
+            uri: Uri.joinPath(uri, "..")
+        }));
+
+        const selected = await window.showQuickPick(items, {
+            placeHolder: "Select a datapack root folder",
+            title: "Browse Datapacks"
+        });
+
+        if (selected) {
+            await this.setDatapackRoot(selected.uri);
+        }
+    }
+
+    private getRelativePath(uri: Uri): string {
+        const workspaceFolder = workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) return uri.fsPath;
+
+        return workspace.asRelativePath(uri, false);
+    }
+
     dispose(): void {
         for (const disposable of this.disposables) {
             disposable.dispose();
@@ -107,7 +176,6 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private registerEditorListeners(): void {
-        this.setupFileWatcher();
         this.disposables.push(
             window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChanged(editor)),
             workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e))
@@ -119,10 +187,14 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private setupFileWatcher(): void {
-        const workspaceFolder = workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) return;
+        if (this.fileWatcher) {
+            this.fileWatcher.dispose();
+        }
 
-        const pattern = new RelativePattern(workspaceFolder, "data/**/*.{json,mcfunction}");
+        const watchRoot = this.currentPackRoot ?? workspace.workspaceFolders?.[0]?.uri;
+        if (!watchRoot) return;
+
+        const pattern = new RelativePattern(watchRoot, "data/**/*.{json,mcfunction}");
         this.fileWatcher = workspace.createFileSystemWatcher(pattern);
 
         this.fileWatcher.onDidCreate(() => this.refreshRegistries());
@@ -132,20 +204,24 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private async refreshRegistries(): Promise<void> {
+        if (!this.currentPackFormat) return;
+
         const version = getVersionFromPackFormat(this.currentPackFormat);
         if (!version) return;
 
-        const [vanillaRegistries, workspaceRegistries] = await Promise.all([
-            this.cacheService.getRegistries(version),
-            this.packDetector.scanWorkspaceRegistries()
-        ]);
-
-        this.sendMessage({ type: "registries", payload: this.mergeRegistries(vanillaRegistries, workspaceRegistries) });
+        await this.loadRegistries(version);
     }
 
     private async changePackFormat(packFormat: number): Promise<void> {
+        const version = getVersionFromPackFormat(packFormat);
+        if (!version) {
+            this.sendMessage({ type: "init", payload: { pack: { state: "invalid", reason: `Unknown pack format: ${packFormat}` } } });
+            return;
+        }
+
         this.currentPackFormat = packFormat;
-        this.initializeWebview();
+        this.sendMessage({ type: "init", payload: { pack: { state: "found", packFormat, version } } });
+        await this.loadRegistries(version);
     }
 
     private onActiveEditorChanged(editor: TextEditor | undefined): void {
@@ -198,6 +274,9 @@ export class NodeEditorProvider implements WebviewViewProvider {
                 break;
             case "saveFile":
                 await this.handleSaveFile(message.uri, message.content);
+                break;
+            case "browseDatapacks":
+                await this.browseDatapacks();
                 break;
         }
     }

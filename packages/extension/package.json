@@ -3,7 +3,7 @@
     "displayName": "Datapack Node Editor - Mi-node",
     "description": "Integration of the Misode editor into VSC, with Spyglass tools.",
     "icon": "resources/icon.png",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "publisher": "voxel",
     "repository": {
         "type": "git",
@@ -45,8 +45,27 @@
                 "command": "minode.openEditor",
                 "title": "Open Node Editor",
                 "category": "Mi-Node"
+            },
+            {
+                "command": "minode.setDatapackRoot",
+                "title": "Set as Datapack Root",
+                "category": "Mi-Node"
+            },
+            {
+                "command": "minode.browseDatapacks",
+                "title": "Browse Datapacks",
+                "category": "Mi-Node"
             }
-        ]
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "minode.setDatapackRoot",
+                    "when": "explorerResourceIsFolder",
+                    "group": "minode@1"
+                }
+            ]
+        }
     },
     "scripts": {
         "build": "tsdown",

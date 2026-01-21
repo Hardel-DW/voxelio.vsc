@@ -1067,3 +1067,65 @@ button.move:disabled svg {
 .version-select-item-format {
     color: var(--node-text-dimmed);
 }
+
+.version-select-custom {
+    display: flex;
+    gap: var(--size-padding);
+    padding: var(--size-padding-lg);
+    border-top: 1px solid var(--node-border);
+}
+
+.version-select-custom-input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--size-padding) var(--size-padding-lg);
+    font-size: var(--size-font);
+    color: var(--node-text);
+    background-color: var(--node-background-input);
+    border: 1px solid var(--node-border);
+    border-radius: var(--size-radius);
+}
+
+.version-select-custom-input::placeholder {
+    color: var(--node-text-dimmed);
+}
+
+.version-select-custom-input:focus {
+    outline: none;
+    border-color: var(--node-text-dimmed);
+}
+
+.version-select-custom-btn {
+    padding: var(--size-padding) var(--size-padding-lg);
+    font-size: var(--size-font);
+    font-weight: 500;
+    color: var(--node-text);
+    background-color: var(--node-add);
+    border: 1px solid var(--node-add-border);
+    border-radius: var(--size-radius);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.version-select-custom-btn:hover {
+    background-color: var(--node-add-hover);
+}
+
+/* Browse button for empty states */
+.browse-button {
+    margin-top: 16px;
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--node-text);
+    background-color: var(--node-background-input);
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.browse-button:hover {
+    background-color: var(--node-background-hover);
+    border-color: var(--node-text-dimmed);
+}

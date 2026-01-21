@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { MutableRegistries, PackInfo, RegistriesPayload } from "@/types.ts";
+import type { MutableRegistries, PackDetectionResult, PackInfo, RegistriesPayload } from "@/types.ts";
 
 type PackVersion = number | [number] | [number, number];
 
@@ -13,30 +13,66 @@ interface PackMcmeta {
 }
 
 export class PackDetector {
-    async detect(): Promise<PackInfo | null> {
+    async detect(): Promise<PackDetectionResult> {
         const files = await vscode.workspace.findFiles("pack.mcmeta", null, 1);
 
         if (files.length === 0) {
-            return null;
+            return { status: "notFound" };
         }
 
         const uri = files[0];
+        return this.validatePackMcmeta(uri);
+    }
+
+    async detectAt(uri: vscode.Uri): Promise<PackDetectionResult> {
+        const packUri = vscode.Uri.joinPath(uri, "pack.mcmeta");
+
+        try {
+            await vscode.workspace.fs.stat(packUri);
+            return this.validatePackMcmeta(packUri);
+        } catch {
+            return { status: "invalid", uri: packUri, reason: "pack.mcmeta not found in selected folder" };
+        }
+    }
+
+    async findAllPackMcmeta(): Promise<vscode.Uri[]> {
+        return vscode.workspace.findFiles("**/pack.mcmeta");
+    }
+
+    private async validatePackMcmeta(uri: vscode.Uri): Promise<PackDetectionResult> {
         const content = await this.readJson<PackMcmeta>(uri);
+
+        if (content === null) {
+            return { status: "invalid", uri, reason: "Invalid JSON syntax" };
+        }
+
+        if (!content.pack) {
+            return { status: "invalid", uri, reason: "Missing 'pack' object" };
+        }
+
         const packFormat = this.extractPackFormat(content);
 
         if (packFormat === null) {
-            return null;
+            return { status: "invalid", uri, reason: "Missing or invalid pack_format" };
         }
 
-        return { uri, packFormat, description: content?.pack?.description };
+        const pack: PackInfo = { uri, packFormat, description: content.pack.description };
+        return { status: "found", pack };
     }
 
-    async scanWorkspaceRegistries(): Promise<RegistriesPayload> {
+    async scanWorkspaceRegistries(packRoot?: vscode.Uri): Promise<RegistriesPayload> {
         const registries: MutableRegistries = {};
 
+        const jsonPattern = packRoot
+            ? new vscode.RelativePattern(packRoot, "data/**/*.json")
+            : "data/**/*.json";
+        const mcfunctionPattern = packRoot
+            ? new vscode.RelativePattern(packRoot, "data/**/function/**/*.mcfunction")
+            : "data/**/function/**/*.mcfunction";
+
         const [jsonFiles, mcfunctionFiles] = await Promise.all([
-            vscode.workspace.findFiles("data/**/*.json"),
-            vscode.workspace.findFiles("data/**/function/**/*.mcfunction")
+            vscode.workspace.findFiles(jsonPattern),
+            vscode.workspace.findFiles(mcfunctionPattern)
         ]);
 
         for (const file of jsonFiles) {

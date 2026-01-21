@@ -13,11 +13,16 @@ import { getWikiLabel, getWikiUrl } from "@/config.ts";
 import { getPersistedState, postMessage, setPersistedState } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
-import type { ExtensionMessage, RegistriesPayload, VersionConfig, WebviewMessage } from "@/types.ts";
+import type { ExtensionMessage, PackStatus, RegistriesPayload, VersionConfig, WebviewMessage } from "@/types.ts";
+
+type PackState =
+    | { status: "loading" }
+    | { status: "notFound" }
+    | { status: "invalid"; reason: string }
+    | { status: "ready"; packFormat: number; version: VersionConfig };
 
 interface AppState {
-    packFormat: number | null;
-    version: VersionConfig | null;
+    packState: PackState;
     registries: RegistriesPayload | null;
     service: SpyglassService | null;
     docAndNode: DocAndNode | null;
@@ -28,8 +33,7 @@ interface AppState {
 }
 
 const initialState: AppState = {
-    packFormat: null,
-    version: null,
+    packState: { status: "loading" },
     registries: null,
     service: null,
     docAndNode: null,
@@ -62,14 +66,31 @@ function extractDatapackPath(uri: string): string | null {
     return match[1].replace(/\\/g, "/");
 }
 
-async function handleInit(packFormat: number, version: VersionConfig): Promise<void> {
-    setState({ packFormat, version, error: null, service: null, registries: null });
+function handleInit(pack: PackStatus): void {
+    if (pack.state === "notFound") {
+        setState({ packState: { status: "notFound" }, error: null, service: null, registries: null });
+        return;
+    }
+
+    if (pack.state === "invalid") {
+        setState({ packState: { status: "invalid", reason: pack.reason }, error: null, service: null, registries: null });
+        return;
+    }
+
+    setState({
+        packState: { status: "ready", packFormat: pack.packFormat, version: pack.version },
+        error: null,
+        service: null,
+        registries: null
+    });
     tryCreateService();
 }
 
 async function handleRegistries(registries: RegistriesPayload): Promise<void> {
-    const { service, version, virtualUri } = state;
+    const { service, packState, virtualUri } = state;
     setState({ registries });
+
+    const version = packState.status === "ready" ? packState.version : null;
 
     if (!service || !version) {
         tryCreateService();
@@ -96,12 +117,12 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
 }
 
 async function tryCreateService(): Promise<void> {
-    const { version, registries, service, loading } = state;
-    if (!version || !registries || service || loading) return;
+    const { packState, registries, service, loading } = state;
+    if (packState.status !== "ready" || !registries || service || loading) return;
 
     setState({ loading: true });
     try {
-        const newService = await SpyglassServiceClass.create(version, registries);
+        const newService = await SpyglassServiceClass.create(packState.version, registries);
         setState({ service: newService, loading: false });
     } catch (err) {
         setState({ error: err instanceof Error ? err.message : "Failed to init", loading: false });
@@ -146,11 +167,7 @@ function handleMessage(event: MessageEvent<ExtensionMessage>): void {
     const msg = event.data;
     switch (msg.type) {
         case "init":
-            if (msg.payload.version) {
-                handleInit(msg.payload.packFormat, msg.payload.version);
-            } else {
-                setState({ packFormat: msg.payload.packFormat, error: msg.payload.error ?? null });
-            }
+            handleInit(msg.payload.pack);
             break;
         case "registries":
             handleRegistries(msg.payload);
@@ -181,20 +198,64 @@ export function App(): JSX.Element | null {
         return true;
     });
 
-    const { packFormat, version, registries, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
+    const { packState, registries, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
+
+    if (packState.status === "loading") {
+        return (
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.loader} title="Waiting for pack info..." />
+                <Footer />
+            </div>
+        );
+    }
+
+    if (packState.status === "notFound") {
+        return (
+            <div class="editor-layout">
+                <EmptyState
+                    icon={Octicon.package_icon}
+                    title="No pack.mcmeta found"
+                    description="Place a pack.mcmeta file at the workspace root, or browse for datapacks in subfolders.">
+                    <button
+                        type="button"
+                        class="browse-button"
+                        onClick={() => postMessage({ type: "browseDatapacks" } satisfies WebviewMessage)}>
+                        Browse Datapacks
+                    </button>
+                </EmptyState>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (packState.status === "invalid") {
+        return (
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.alert} title="Invalid pack.mcmeta" description={packState.reason}>
+                    <button
+                        type="button"
+                        class="browse-button"
+                        onClick={() => postMessage({ type: "browseDatapacks" } satisfies WebviewMessage)}>
+                        Browse Datapacks
+                    </button>
+                </EmptyState>
+                <Footer />
+            </div>
+        );
+    }
+
+    const { packFormat, version } = packState;
 
     if (error) {
         return (
             <div class="editor-layout">
-                {version && packFormat && (
-                    <Header
-                        packFormat={packFormat}
-                        versionId={version.id}
-                        onPackFormatChange={(newPackFormat) =>
-                            postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage)
-                        }
-                    />
-                )}
+                <Header
+                    packFormat={packFormat}
+                    versionId={version.id}
+                    onPackFormatChange={(newPackFormat) =>
+                        postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage)
+                    }
+                />
                 <EmptyState icon={Octicon.alert} title="Error" description={error} />
                 <Footer />
             </div>
@@ -205,15 +266,6 @@ export function App(): JSX.Element | null {
         return (
             <div class="editor-layout">
                 <EmptyState icon={Octicon.loader} title="Loading Spyglass..." />
-                <Footer />
-            </div>
-        );
-    }
-
-    if (!packFormat || !version) {
-        return (
-            <div class="editor-layout">
-                <EmptyState icon={Octicon.loader} title="Waiting for pack info..." />
                 <Footer />
             </div>
         );

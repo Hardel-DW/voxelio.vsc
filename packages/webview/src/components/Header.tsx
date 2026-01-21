@@ -2,13 +2,7 @@ import type { JSX } from "preact";
 import { useState } from "preact/hooks";
 import { Octicon } from "@/components/Icons.tsx";
 import { VersionSelect } from "@/components/VersionSelect.tsx";
-import { applyUiScale, cycleUiScale, getUiScale, postMessage, type UiScale } from "@/lib/vscode.ts";
-
-const SCALE_LABELS: Record<UiScale, string> = {
-    small: "Small",
-    medium: "Medium",
-    large: "Large"
-};
+import { applyUiScale, getUiScale, MAX_SCALE, MIN_SCALE, postMessage, setUiScale } from "@/lib/vscode.ts";
 
 interface HeaderProps {
     packFormat: number;
@@ -17,7 +11,7 @@ interface HeaderProps {
 }
 
 export function Header({ packFormat, versionId, onPackFormatChange }: HeaderProps): JSX.Element {
-    const [scale, setScale] = useState<UiScale>(() => {
+    const [scale, setScaleState] = useState<number>(() => {
         const saved = getUiScale();
         applyUiScale(saved);
         return saved;
@@ -31,9 +25,10 @@ export function Header({ packFormat, versionId, onPackFormatChange }: HeaderProp
         setTimeout(() => setIsReloading(false), 2000);
     };
 
-    const handleScaleToggle = (): void => {
-        const next = cycleUiScale();
-        setScale(next);
+    const handleScaleChange = (e: JSX.TargetedEvent<HTMLInputElement>): void => {
+        const value = Number(e.currentTarget.value);
+        setScaleState(value);
+        setUiScale(value);
     };
 
     return (
@@ -41,9 +36,17 @@ export function Header({ packFormat, versionId, onPackFormatChange }: HeaderProp
             <div class="header-row">
                 <VersionSelect packFormat={packFormat} versionId={versionId} onSelect={onPackFormatChange} />
                 <div class="header-actions">
-                    <button type="button" class="header-scale" onClick={handleScaleToggle}>
-                        Text Size: {SCALE_LABELS[scale]}
-                    </button>
+                    <label class="header-scale-slider">
+                        <span class="header-scale-label">Size: {scale}</span>
+                        <input
+                            type="range"
+                            min={MIN_SCALE}
+                            max={MAX_SCALE}
+                            value={scale}
+                            onInput={handleScaleChange}
+                            class="header-scale-input"
+                        />
+                    </label>
                     <button
                         type="button"
                         class={`header-icon ${isReloading ? "rotating" : ""}`}

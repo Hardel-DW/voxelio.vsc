@@ -12,24 +12,27 @@ body {
 }
 
 :root {
-    /* Scale sizes - default (small) */
-    --size-font: 10px;
-    --size-font-lg: 12px;
-    --size-font-sm: 9px;
-    --size-height: 24px;
-    --size-height-half: 12px;
-    --size-icon: 24px;
-    --size-icon-sm: 10px;
-    --size-gap: 2px;
-    --size-gap-lg: 8px;
-    --size-padding: 4px;
-    --size-padding-lg: 6px;
-    --size-padding-xl: 8px;
-    --size-indent: 12px;
-    --size-radius: 3px;
-    --size-radius-lg: 6px;
-    --size-line-height: 14px;
-    --size-line-height-lg: 16px;
+    /* UI scale factor (1-10), set via data-scale attribute */
+    --ui-scale: 1;
+
+    /* Scale sizes - calculated from --ui-scale */
+    --size-font: calc(9px + var(--ui-scale) * 0.5px);
+    --size-font-lg: calc(11px + var(--ui-scale) * 0.5px);
+    --size-font-sm: calc(8px + var(--ui-scale) * 0.5px);
+    --size-height: calc(22px + var(--ui-scale) * 1px);
+    --size-height-half: calc(11px + var(--ui-scale) * 0.5px);
+    --size-icon: calc(22px + var(--ui-scale) * 1px);
+    --size-icon-sm: calc(9px + var(--ui-scale) * 0.5px);
+    --size-gap: calc(1px + var(--ui-scale) * 0.2px);
+    --size-gap-lg: calc(6px + var(--ui-scale) * 0.5px);
+    --size-padding: calc(3px + var(--ui-scale) * 0.3px);
+    --size-padding-lg: calc(5px + var(--ui-scale) * 0.3px);
+    --size-padding-xl: calc(6px + var(--ui-scale) * 0.5px);
+    --size-indent: calc(10px + var(--ui-scale) * 0.5px);
+    --size-radius: calc(2px + var(--ui-scale) * 0.2px);
+    --size-radius-lg: calc(4px + var(--ui-scale) * 0.4px);
+    --size-line-height: calc(12px + var(--ui-scale) * 0.5px);
+    --size-line-height-lg: calc(14px + var(--ui-scale) * 0.5px);
 
     /* Colors */
     --node-border: var(--vscode-input-border, #3f3f3f);
@@ -60,48 +63,6 @@ body {
     --category-pool-background: #21331d;
 }
 
-/* medium scale */
-body[data-scale="medium"] {
-    --size-font: 11px;
-    --size-font-lg: 13px;
-    --size-font-sm: 10px;
-    --size-height: 26px;
-    --size-height-half: 13px;
-    --size-icon: 26px;
-    --size-icon-sm: 11px;
-    --size-gap: 2px;
-    --size-gap-lg: 9px;
-    --size-padding: 4px;
-    --size-padding-lg: 6px;
-    --size-padding-xl: 9px;
-    --size-indent: 13px;
-    --size-radius: 3px;
-    --size-radius-lg: 6px;
-    --size-line-height: 15px;
-    --size-line-height-lg: 17px;
-}
-
-
-/* large scale */
-body[data-scale="large"] {
-    --size-font: 12px;
-    --size-font-lg: 14px;
-    --size-font-sm: 11px;
-    --size-height: 28px;
-    --size-height-half: 14px;
-    --size-icon: 28px;
-    --size-icon-sm: 12px;
-    --size-gap: 3px;
-    --size-gap-lg: 10px;
-    --size-padding: 5px;
-    --size-padding-lg: 7px;
-    --size-padding-xl: 10px;
-    --size-indent: 14px;
-    --size-radius: 4px;
-    --size-radius-lg: 7px;
-    --size-line-height: 16px;
-    --size-line-height-lg: 18px;
-}
 /* Message styles for loading/error states */
 .loading-message,
 .error-message,
@@ -798,18 +759,54 @@ button.move:disabled svg {
     gap: 16px;
 }
 
-.header-scale {
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: 10px;
-    color: var(--node-text-dimmed);
-    cursor: pointer;
-    transition: color 0.15s;
+.header-scale-slider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.header-scale:hover {
-    color: var(--node-text);
+.header-scale-label {
+    font-size: 10px;
+    color: var(--node-text-dimmed);
+    white-space: nowrap;
+    min-width: 42px;
+}
+
+.header-scale-input {
+    width: 60px;
+    height: 4px;
+    appearance: none;
+    background: var(--node-border);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.header-scale-input::-webkit-slider-thumb {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--node-text-dimmed);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.header-scale-input::-webkit-slider-thumb:hover {
+    background: var(--node-text);
+}
+
+.header-scale-input::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--node-text-dimmed);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.header-scale-input::-moz-range-thumb:hover {
+    background: var(--node-text);
 }
 
 .header-icon {

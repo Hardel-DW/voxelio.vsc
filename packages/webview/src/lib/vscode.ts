@@ -1,11 +1,9 @@
 import type { WebviewMessage } from "@/types.ts";
 
-export type UiScale = "small" | "medium" | "large";
-
 interface PersistedState {
     realUri?: string;
     virtualUri?: string;
-    uiScale?: UiScale;
+    uiScale?: number;
 }
 
 interface VsCodeApi {
@@ -38,27 +36,21 @@ export function saveFile(uri: string, content: string): void {
     postMessage({ type: "saveFile", uri, content });
 }
 
-const SCALE_ORDER: UiScale[] = ["small", "medium", "large"];
+export const MIN_SCALE = 1;
+export const MAX_SCALE = 20;
+export const DEFAULT_SCALE = 1;
 
-export function getUiScale(): UiScale {
-    return getPersistedState()?.uiScale ?? "small";
+export function getUiScale(): number {
+    return getPersistedState()?.uiScale ?? DEFAULT_SCALE;
 }
 
-export function setUiScale(scale: UiScale): void {
+export function setUiScale(scale: number): void {
+    const clamped = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
     const state = getPersistedState() ?? {};
-    setPersistedState({ ...state, uiScale: scale });
-    applyUiScale(scale);
+    setPersistedState({ ...state, uiScale: clamped });
+    applyUiScale(clamped);
 }
 
-export function cycleUiScale(): UiScale {
-    const current = getUiScale();
-    const currentIndex = SCALE_ORDER.indexOf(current);
-    const nextIndex = (currentIndex + 1) % SCALE_ORDER.length;
-    const next = SCALE_ORDER[nextIndex];
-    setUiScale(next);
-    return next;
-}
-
-export function applyUiScale(scale: UiScale): void {
-    document.body.dataset.scale = scale === "small" ? "" : scale;
+export function applyUiScale(scale: number): void {
+    document.documentElement.style.setProperty("--ui-scale", String(scale));
 }

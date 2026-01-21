@@ -67,8 +67,8 @@ function getSnapshot(): AppState {
     return state;
 }
 
-function extractDatapackPath(uri: string): string | null {
-    const match = uri.match(/[/\\](data[/\\].+\.json)$/i);
+function extractPackPath(uri: string): string | null {
+    const match = uri.match(/[/\\]((?:data|assets)[/\\].+\.json)$/i);
     if (!match) return null;
     return match[1].replace(/\\/g, "/");
 }
@@ -152,10 +152,10 @@ async function handleFile(realUri: string, content: string): Promise<void> {
 }
 
 async function processFile(service: SpyglassService, realUri: string, content: string, oldVirtualUri: string | null): Promise<void> {
-    const datapackPath = extractDatapackPath(realUri);
-    if (!datapackPath) return;
+    const packPath = extractPackPath(realUri);
+    if (!packPath) return;
 
-    const virtualUri = `file:///root/${datapackPath}`;
+    const virtualUri = `file:///root/${packPath}`;
     if (oldVirtualUri && oldVirtualUri !== virtualUri) {
         service.unwatchFile(oldVirtualUri, onDocumentUpdated);
     }

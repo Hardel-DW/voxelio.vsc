@@ -141,7 +141,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
         const watchRoot = this.currentPackRoot ?? workspace.workspaceFolders?.[0]?.uri;
         if (!watchRoot) return;
 
-        const pattern = new RelativePattern(watchRoot, "data/**/*.{json,mcfunction}");
+        const pattern = new RelativePattern(watchRoot, "{data,assets}/**/*.{json,mcfunction}");
         this.fileWatcher = workspace.createFileSystemWatcher(pattern);
 
         this.fileWatcher.onDidCreate(() => this.refreshRegistries());

@@ -63,40 +63,30 @@ export class PackDetector {
     async scanWorkspaceRegistries(packRoot?: vscode.Uri): Promise<RegistriesPayload> {
         const registries: MutableRegistries = {};
 
-        const jsonPattern = packRoot ? new vscode.RelativePattern(packRoot, "data/**/*.json") : "data/**/*.json";
+        const dataJsonPattern = packRoot ? new vscode.RelativePattern(packRoot, "data/**/*.json") : "data/**/*.json";
+        const assetsJsonPattern = packRoot
+            ? new vscode.RelativePattern(packRoot, "assets/**/*.json")
+            : "assets/**/*.json";
         const mcfunctionPattern = packRoot
             ? new vscode.RelativePattern(packRoot, "data/**/function/**/*.mcfunction")
             : "data/**/function/**/*.mcfunction";
 
-        const [jsonFiles, mcfunctionFiles] = await Promise.all([
-            vscode.workspace.findFiles(jsonPattern),
+        const [dataJsonFiles, assetsJsonFiles, mcfunctionFiles] = await Promise.all([
+            vscode.workspace.findFiles(dataJsonPattern),
+            vscode.workspace.findFiles(assetsJsonPattern),
             vscode.workspace.findFiles(mcfunctionPattern)
         ]);
 
-        for (const file of jsonFiles) {
-            const parsed = this.parseDatapackPath(file.fsPath, ".json");
-            if (!parsed) continue;
+        for (const file of dataJsonFiles) {
+            this.addToRegistries(registries, file.fsPath, ".json", "data");
+        }
 
-            const { category, resourceId } = parsed;
-            if (!registries[category]) {
-                registries[category] = [];
-            }
-            if (!registries[category].includes(resourceId)) {
-                registries[category].push(resourceId);
-            }
+        for (const file of assetsJsonFiles) {
+            this.addToRegistries(registries, file.fsPath, ".json", "assets");
         }
 
         for (const file of mcfunctionFiles) {
-            const parsed = this.parseDatapackPath(file.fsPath, ".mcfunction");
-            if (!parsed) continue;
-
-            const { category, resourceId } = parsed;
-            if (!registries[category]) {
-                registries[category] = [];
-            }
-            if (!registries[category].includes(resourceId)) {
-                registries[category].push(resourceId);
-            }
+            this.addToRegistries(registries, file.fsPath, ".mcfunction", "data");
         }
 
         for (const key of Object.keys(registries)) {
@@ -106,10 +96,25 @@ export class PackDetector {
         return registries;
     }
 
-    private parseDatapackPath(fsPath: string, ext: string): { category: string; resourceId: string } | null {
+    private addToRegistries(registries: MutableRegistries, fsPath: string, ext: string, packType: "data" | "assets"): void {
+        const parsed = this.parsePackPath(fsPath, ext, packType);
+        if (!parsed) return;
+
+        const { category, resourceId } = parsed;
+        registries[category] ??= [];
+        if (!registries[category].includes(resourceId)) {
+            registries[category].push(resourceId);
+        }
+    }
+
+    private parsePackPath(
+        fsPath: string,
+        ext: string,
+        packType: "data" | "assets"
+    ): { category: string; resourceId: string } | null {
         const normalizedPath = fsPath.replace(/\\/g, "/");
         const extEscaped = ext.replace(".", "\\.");
-        const regex = new RegExp(`data/([^/]+)/(.+)${extEscaped}$`);
+        const regex = new RegExp(`${packType}/([^/]+)/(.+)${extEscaped}$`);
         const match = normalizedPath.match(regex);
         if (!match) return null;
 
@@ -117,21 +122,27 @@ export class PackDetector {
         const parts = restPath.split("/");
         if (parts.length < 2) return null;
 
-        let category: string;
-        let resourcePath: string;
-
-        if (parts[0] === "tags" && parts.length >= 3) {
-            category = `tag/${parts[1]}`;
-            resourcePath = parts.slice(2).join("/");
-        } else if (parts[0] === "worldgen" && parts.length >= 3) {
-            category = `worldgen/${parts[1]}`;
-            resourcePath = parts.slice(2).join("/");
-        } else {
-            category = parts[0];
-            resourcePath = parts.slice(1).join("/");
-        }
+        const category = this.extractCategory(parts);
+        const resourcePath = this.extractResourcePath(parts);
 
         return { category, resourceId: `${namespace}:${resourcePath}` };
+    }
+
+    private extractCategory(parts: string[]): string {
+        if (parts[0] === "tags" && parts.length >= 3) {
+            return `tag/${parts[1]}`;
+        }
+        if (parts[0] === "worldgen" && parts.length >= 3) {
+            return `worldgen/${parts[1]}`;
+        }
+        return parts[0];
+    }
+
+    private extractResourcePath(parts: string[]): string {
+        if ((parts[0] === "tags" || parts[0] === "worldgen") && parts.length >= 3) {
+            return parts.slice(2).join("/");
+        }
+        return parts.slice(1).join("/");
     }
 
     private extractPackFormat(content: PackMcmeta | null): number | null {

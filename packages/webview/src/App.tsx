@@ -45,6 +45,7 @@ interface AppState {
 
 const DEFAULT_SETTINGS: UserSettings = {
     uiScale: 1,
+    largeFileThreshold: 1000,
     colors: {
         primary: "#1b1b1b",
         text: "#dadada",
@@ -400,7 +401,7 @@ export function App(): JSX.Element | null {
                 />
                 {docAndNode ? (
                     <>
-                        <JsonFileView docAndNode={docAndNode} service={service} />
+                        <JsonFileView docAndNode={docAndNode} service={service} largeFileThreshold={settings.largeFileThreshold} />
                         {wikiUrl && wikiLabel && <WikiLink url={wikiUrl} label={wikiLabel} />}
                     </>
                 ) : (

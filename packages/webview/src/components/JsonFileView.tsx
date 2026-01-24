@@ -8,14 +8,13 @@ import { getRootType, simplifyType } from "@/services/McdocHelpers.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { McdocRoot } from "./mcdoc/McdocRoot.tsx";
 
-const LARGE_FILE_THRESHOLD = 1000;
-
 interface JsonFileViewProps {
     docAndNode: DocAndNode;
     service: SpyglassService;
+    largeFileThreshold: number;
 }
 
-export function JsonFileView({ docAndNode, service }: JsonFileViewProps): JSX.Element | null {
+export function JsonFileView({ docAndNode, service, largeFileThreshold }: JsonFileViewProps): JSX.Element | null {
     const jsonFile = docAndNode.node.children[0];
     if (!JsonFileNode.is(jsonFile)) {
         return <div class="error-message">Invalid JSON file structure</div>;
@@ -23,7 +22,7 @@ export function JsonFileView({ docAndNode, service }: JsonFileViewProps): JSX.El
 
     const node = jsonFile.children[0] as JsonNode | undefined;
     const lineCount = docAndNode.doc.getText().split("\n").length;
-    const isLargeFile = lineCount > LARGE_FILE_THRESHOLD;
+    const isLargeFile = largeFileThreshold > 0 && lineCount > largeFileThreshold;
     const ctx = createMcdocContext(docAndNode, service, isLargeFile);
     const resourceType = getResourceType(docAndNode, ctx);
     const mcdocType = getMcdocType(resourceType, ctx);

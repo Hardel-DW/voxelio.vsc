@@ -145,6 +145,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
         const config = workspace.getConfiguration("minode");
         return {
             uiScale: config.get<number>("uiScale", 1),
+            largeFileThreshold: config.get<number>("largeFileThreshold", 1000),
             colors: {
                 primary: config.get<string>("colors.primary", "#1b1b1b"),
                 text: config.get<string>("colors.text", "#dadada"),

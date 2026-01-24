@@ -38,6 +38,7 @@ export interface ColorSettings {
 
 export interface UserSettings {
     readonly uiScale: number;
+    readonly largeFileThreshold: number;
     readonly colors: ColorSettings;
 }
 

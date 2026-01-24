@@ -55,6 +55,13 @@
                     "maximum": 20,
                     "description": "UI scale factor for the node editor (1-20)"
                 },
+                "minode.largeFileThreshold": {
+                    "type": "number",
+                    "default": 1000,
+                    "minimum": 0,
+                    "maximum": 50000,
+                    "description": "Line count threshold above which all nodes are collapsed by default for performance"
+                },
                 "minode.colors.primary": {
                     "type": "string",
                     "default": "#1b1b1b",

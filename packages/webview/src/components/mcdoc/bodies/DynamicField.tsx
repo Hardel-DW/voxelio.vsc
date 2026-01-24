@@ -21,7 +21,7 @@ interface DynamicFieldProps {
 }
 
 export function DynamicField({ pair, index, field, fieldKey, node, ctx }: DynamicFieldProps): JSX.Element | null {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(ctx.defaultCollapsed);
     const child = pair.value;
     const childType = simplifyType(field.type, ctx, { key: pair.key, parent: node });
     const category = getCategory(field.type);

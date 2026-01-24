@@ -8,6 +8,8 @@ import { getRootType, simplifyType } from "@/services/McdocHelpers.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { McdocRoot } from "./mcdoc/McdocRoot.tsx";
 
+const LARGE_FILE_THRESHOLD = 1000;
+
 interface JsonFileViewProps {
     docAndNode: DocAndNode;
     service: SpyglassService;
@@ -20,7 +22,9 @@ export function JsonFileView({ docAndNode, service }: JsonFileViewProps): JSX.El
     }
 
     const node = jsonFile.children[0] as JsonNode | undefined;
-    const ctx = createMcdocContext(docAndNode, service);
+    const lineCount = docAndNode.doc.getText().split("\n").length;
+    const isLargeFile = lineCount > LARGE_FILE_THRESHOLD;
+    const ctx = createMcdocContext(docAndNode, service, isLargeFile);
     const resourceType = getResourceType(docAndNode, ctx);
     const mcdocType = getMcdocType(resourceType, ctx);
 
@@ -35,7 +39,7 @@ export function JsonFileView({ docAndNode, service }: JsonFileViewProps): JSX.El
     );
 }
 
-function createMcdocContext(docAndNode: DocAndNode, service: SpyglassService): McdocContext {
+function createMcdocContext(docAndNode: DocAndNode, service: SpyglassService, defaultCollapsed: boolean): McdocContext {
     const errors = [
         ...(docAndNode.node.binderErrors ?? []),
         ...(docAndNode.node.checkerErrors ?? []),
@@ -58,7 +62,7 @@ function createMcdocContext(docAndNode: DocAndNode, service: SpyglassService): M
         });
     };
 
-    return { ...checkerCtx, makeEdit };
+    return { ...checkerCtx, makeEdit, defaultCollapsed };
 }
 
 function getResourceType(docAndNode: DocAndNode, ctx: McdocContext): string | undefined {

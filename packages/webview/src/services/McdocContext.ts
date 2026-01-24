@@ -5,4 +5,5 @@ export type MakeEdit = (edit: (range: Range) => JsonNode | undefined) => void;
 
 export interface McdocContext extends CheckerContext {
     makeEdit: MakeEdit;
+    defaultCollapsed: boolean;
 }

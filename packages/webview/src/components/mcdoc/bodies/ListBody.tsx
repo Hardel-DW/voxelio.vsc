@@ -80,7 +80,7 @@ interface ListItemProps {
 
 // Misode: McdocRenderer.tsx:908-1008
 function ListItem({ item, index, category, type, node, ctx }: ListItemProps): JSX.Element | null {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(ctx.defaultCollapsed);
     const child = item.value;
     const canMoveUp = index > 0;
     const canMoveDown = index < node.children.length - 1;

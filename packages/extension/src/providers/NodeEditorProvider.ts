@@ -137,26 +137,26 @@ export class NodeEditorProvider implements WebviewViewProvider {
 
     private onConfigurationChanged(event: ConfigurationChangeEvent): void {
         if (event.affectsConfiguration("minode")) {
-            this.sendMessage({ type: "init", payload: { pack: this.getCurrentPackStatus(), settings: this.getSettings() } });
+            this.sendMessage({ type: "settings", payload: this.getSettings() });
         }
-    }
-
-    private getCurrentPackStatus(): PackStatus {
-        if (!this.currentPackFormat) {
-            return { state: "notFound" };
-        }
-        const version = getVersionFromPackFormat(this.currentPackFormat);
-        if (!version) {
-            return { state: "invalid", reason: `Unknown pack format: ${this.currentPackFormat}` };
-        }
-        return { state: "found", packFormat: this.currentPackFormat, version };
     }
 
     private getSettings(): UserSettings {
         const config = workspace.getConfiguration("minode");
         return {
             uiScale: config.get<number>("uiScale", 1),
-            accentColor: config.get<string>("accentColor", "#4a9f4a")
+            colors: {
+                primary: config.get<string>("colors.primary", "#1b1b1b"),
+                text: config.get<string>("colors.text", "#dadada"),
+                add: config.get<string>("colors.add", "#487c13"),
+                remove: config.get<string>("colors.remove", "#9b341b"),
+                selected: config.get<string>("colors.selected", "#7f5505"),
+                warning: config.get<string>("colors.warning", "#cca700"),
+                error: config.get<string>("colors.error", "#f48771"),
+                predicate: config.get<string>("colors.predicate", "#306163"),
+                function: config.get<string>("colors.function", "#5f5f5f"),
+                pool: config.get<string>("colors.pool", "#386330")
+            }
         };
     }
 
@@ -164,9 +164,6 @@ export class NodeEditorProvider implements WebviewViewProvider {
         const config = workspace.getConfiguration("minode");
         if (settings.uiScale !== undefined) {
             config.update("uiScale", settings.uiScale, true);
-        }
-        if (settings.accentColor !== undefined) {
-            config.update("accentColor", settings.accentColor, true);
         }
     }
 
@@ -214,7 +211,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private async processEditor(editor: TextEditor | undefined): Promise<void> {
-        if (!editor || !this.isDatapackJsonFile(editor.document)) {
+        if (!editor || !this.isEditableFile(editor.document)) {
             this.currentFileUri = undefined;
             return;
         }
@@ -262,22 +259,34 @@ export class NodeEditorProvider implements WebviewViewProvider {
 
         const uri = event.document.uri.toString();
         if (uri !== this.currentFileUri) return;
-        if (!this.isDatapackJsonFile(event.document)) return;
+        if (!this.isEditableFile(event.document)) return;
 
         this.sendFileContent(event.document);
     }
 
-    private isDatapackJsonFile(document: TextDocument): boolean {
-        if (document.languageId !== "json") return false;
-
+    private isEditableFile(document: TextDocument): boolean {
         const path = document.uri.fsPath;
+
+        // pack.mcmeta peut avoir languageId "json" ou autre selon la config VS Code
+        if (path.endsWith("pack.mcmeta")) return true;
+
+        if (document.languageId !== "json") return false;
         return (path.includes("data") || path.includes("assets")) && path.endsWith(".json");
     }
 
     private sendFileContent(document: TextDocument): void {
+        const options = window.activeTextEditor?.options;
+        const eol = document.eol === 1 ? "\n" : "\r\n";
+        const tabSize = typeof options?.tabSize === "number" ? options.tabSize : 2;
+        const insertSpaces = typeof options?.insertSpaces === "boolean" ? options.insertSpaces : true;
+
         this.sendMessage({
             type: "file",
-            payload: { uri: document.uri.toString(), content: document.getText() }
+            payload: {
+                uri: document.uri.toString(),
+                content: document.getText(),
+                format: { tabSize, insertSpaces, eol }
+            }
         });
     }
 

@@ -55,11 +55,65 @@
                     "maximum": 20,
                     "description": "UI scale factor for the node editor (1-20)"
                 },
-                "minode.accentColor": {
+                "minode.colors.primary": {
                     "type": "string",
-                    "default": "#4a9f4a",
+                    "default": "#1b1b1b",
                     "pattern": "^#[0-9a-fA-F]{6}$",
-                    "description": "Primary accent color in hex format (e.g., #4a9f4a). Variants are auto-calculated using oklch."
+                    "description": "Primary background color (dark)"
+                },
+                "minode.colors.text": {
+                    "type": "string",
+                    "default": "#dadada",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Text color (light)"
+                },
+                "minode.colors.add": {
+                    "type": "string",
+                    "default": "#487c13",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for add buttons (green)"
+                },
+                "minode.colors.remove": {
+                    "type": "string",
+                    "default": "#9b341b",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for remove buttons (red)"
+                },
+                "minode.colors.selected": {
+                    "type": "string",
+                    "default": "#7f5505",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for selected state (gold)"
+                },
+                "minode.colors.warning": {
+                    "type": "string",
+                    "default": "#cca700",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for warnings (yellow)"
+                },
+                "minode.colors.error": {
+                    "type": "string",
+                    "default": "#f48771",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for errors (red/orange)"
+                },
+                "minode.colors.predicate": {
+                    "type": "string",
+                    "default": "#306163",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for predicate category (teal)"
+                },
+                "minode.colors.function": {
+                    "type": "string",
+                    "default": "#5f5f5f",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for function category (gray)"
+                },
+                "minode.colors.pool": {
+                    "type": "string",
+                    "default": "#386330",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Color for pool category (dark green)"
                 }
             }
         }

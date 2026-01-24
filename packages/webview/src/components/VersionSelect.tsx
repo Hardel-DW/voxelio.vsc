@@ -60,12 +60,13 @@ const RESOURCEPACK_VERSIONS: readonly VersionOption[] = [
 interface VersionSelectProps {
     packFormat: number;
     versionId: string;
+    packType?: "Datapack" | "Resourcepack";
     onSelect: (packFormat: number) => void;
 }
 
-export function VersionSelect({ packFormat, versionId, onSelect }: VersionSelectProps): JSX.Element {
+export function VersionSelect({ packFormat, versionId, packType: initialPackType, onSelect }: VersionSelectProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
-    const [packType, setPackType] = useState<PackType>("datapack");
+    const [packType, setPackType] = useState<PackType>(initialPackType === "Resourcepack" ? "resourcepack" : "datapack");
     const [customFormat, setCustomFormat] = useState("");
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +115,7 @@ export function VersionSelect({ packFormat, versionId, onSelect }: VersionSelect
     return (
         <div class="version-select" ref={containerRef} onBlur={handleBlur} role="combobox" aria-expanded={isOpen} tabIndex={0}>
             <button type="button" class="version-select-trigger" onClick={handleToggle}>
-                <span class="version-select-title">Minecraft {versionId}</span>
+                <span class="version-select-title">{initialPackType ?? "Minecraft"} {versionId}</span>
                 <span class="version-select-subtitle">Pack Format: {packFormat}</span>
             </button>
             {isOpen && (

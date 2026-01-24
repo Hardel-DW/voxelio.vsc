@@ -23,9 +23,22 @@ export type PackStatus =
     | { readonly state: "noPackMeta" }
     | { readonly state: "invalid"; readonly reason: string };
 
+export interface ColorSettings {
+    readonly primary: string;
+    readonly text: string;
+    readonly add: string;
+    readonly remove: string;
+    readonly selected: string;
+    readonly warning: string;
+    readonly error: string;
+    readonly predicate: string;
+    readonly function: string;
+    readonly pool: string;
+}
+
 export interface UserSettings {
     readonly uiScale: number;
-    readonly accentColor: string;
+    readonly colors: ColorSettings;
 }
 
 export interface InitPayload {
@@ -41,13 +54,21 @@ export interface MutableRegistries {
     [registry: string]: string[];
 }
 
+export interface FileFormat {
+    readonly tabSize: number;
+    readonly insertSpaces: boolean;
+    readonly eol: "\n" | "\r\n";
+}
+
 export interface FilePayload {
     readonly uri: string;
     readonly content: string;
+    readonly format: FileFormat;
 }
 
 export type ExtensionMessage =
     | { readonly type: "init"; readonly payload: InitPayload }
+    | { readonly type: "settings"; readonly payload: UserSettings }
     | { readonly type: "registries"; readonly payload: RegistriesPayload }
     | { readonly type: "file"; readonly payload: FilePayload };
 

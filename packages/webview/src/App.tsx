@@ -11,10 +11,11 @@ import { JsonFileView } from "@/components/JsonFileView.tsx";
 import { VersionSelect } from "@/components/VersionSelect.tsx";
 import { WikiLink } from "@/components/WikiLink.tsx";
 import { getWikiLabel, getWikiUrl } from "@/config.ts";
+import { applyColorSettings } from "@/lib/colors.ts";
 import { getManualPackFormat, getPersistedState, postMessage, setManualPackFormat, setPersistedState } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
-import type { ExtensionMessage, PackStatus, RegistriesPayload, UserSettings, VersionConfig, WebviewMessage } from "@/types.ts";
+import type { ExtensionMessage, FileFormat, PackStatus, RegistriesPayload, UserSettings, VersionConfig, WebviewMessage } from "@/types.ts";
 
 type PackState =
     | { status: "loading" }
@@ -26,6 +27,7 @@ type PackState =
 interface PendingFile {
     uri: string;
     content: string;
+    format: FileFormat;
 }
 
 interface AppState {
@@ -41,7 +43,21 @@ interface AppState {
     settings: UserSettings;
 }
 
-const DEFAULT_SETTINGS: UserSettings = { uiScale: 1, accentColor: "#4a9f4a" };
+const DEFAULT_SETTINGS: UserSettings = {
+    uiScale: 1,
+    colors: {
+        primary: "#1b1b1b",
+        text: "#dadada",
+        add: "#487c13",
+        remove: "#9b341b",
+        selected: "#7f5505",
+        warning: "#cca700",
+        error: "#f48771",
+        predicate: "#306163",
+        function: "#5f5f5f",
+        pool: "#386330"
+    }
+};
 
 const initialState: AppState = {
     packState: { status: "loading" },
@@ -74,15 +90,16 @@ function getSnapshot(): AppState {
 }
 
 function extractPackPath(uri: string): string | null {
+    if (uri.endsWith("pack.mcmeta")) return "pack.mcmeta";
+
     const match = uri.match(/[/\\]((?:data|assets)[/\\].+\.json)$/i);
     if (!match) return null;
     return match[1].replace(/\\/g, "/");
 }
 
 function applySettings(settings: UserSettings): void {
-    const root = document.documentElement;
-    root.style.setProperty("--ui-scale", String(settings.uiScale));
-    root.style.setProperty("--accent-color", settings.accentColor);
+    document.documentElement.style.setProperty("--ui-scale", String(settings.uiScale));
+    applyColorSettings(settings.colors);
 }
 
 function handleInit(pack: PackStatus, settings: UserSettings): void {
@@ -165,18 +182,18 @@ async function tryCreateService(): Promise<void> {
     }
 }
 
-async function handleFile(realUri: string, content: string): Promise<void> {
+async function handleFile(realUri: string, content: string, format: FileFormat): Promise<void> {
     const { service, virtualUri: oldVirtualUri } = state;
 
     if (!service) {
-        setState({ pendingFile: { uri: realUri, content } });
+        setState({ pendingFile: { uri: realUri, content, format } });
         return;
     }
 
-    await processFile(service, realUri, content, oldVirtualUri);
+    await processFile(service, realUri, content, format, oldVirtualUri);
 }
 
-async function processFile(service: SpyglassService, realUri: string, content: string, oldVirtualUri: string | null): Promise<void> {
+async function processFile(service: SpyglassService, realUri: string, content: string, format: FileFormat, oldVirtualUri: string | null): Promise<void> {
     const packPath = extractPackPath(realUri);
     if (!packPath) return;
 
@@ -185,7 +202,7 @@ async function processFile(service: SpyglassService, realUri: string, content: s
         service.unwatchFile(oldVirtualUri, onDocumentUpdated);
     }
 
-    await service.writeFile(virtualUri, content);
+    await service.writeFile(virtualUri, content, format);
     const docAndNode = await service.openFile(virtualUri);
 
     if (docAndNode) {
@@ -207,11 +224,19 @@ function onDocumentUpdated(docAndNode: DocAndNode): void {
     }
 }
 
+function handleSettings(settings: UserSettings): void {
+    applySettings(settings);
+    setState({ settings });
+}
+
 function handleMessage(event: MessageEvent<ExtensionMessage>): void {
     const msg = event.data;
     switch (msg.type) {
         case "init":
             handleInit(msg.payload.pack, msg.payload.settings);
+            break;
+        case "settings":
+            handleSettings(msg.payload);
             break;
         case "registries":
             handleRegistries(msg.payload);
@@ -242,7 +267,7 @@ export function App(): JSX.Element | null {
         return true;
     });
 
-    const { packState, registries, service, docAndNode, loading, error, settings } = useSyncExternalStore(subscribe, getSnapshot);
+    const { packState, registries, service, docAndNode, loading, error, settings, virtualUri } = useSyncExternalStore(subscribe, getSnapshot);
 
     const handleScaleChange = (newScale: number): void => {
         const clamped = Math.max(1, Math.min(20, newScale));
@@ -250,6 +275,15 @@ export function App(): JSX.Element | null {
         setState({ settings: { ...settings, uiScale: clamped } });
         postMessage({ type: "updateSettings", settings: { uiScale: clamped } });
     };
+
+    const getFileContext = (): "data" | "assets" | "none" => {
+        if (!virtualUri) return "none";
+        if (virtualUri.includes("/data/")) return "data";
+        if (virtualUri.includes("/assets/")) return "assets";
+        return "none";
+    };
+
+    const fileContext = getFileContext();
 
     if (packState.status === "loading" || packState.status === "notFound") {
         return (
@@ -299,6 +333,7 @@ export function App(): JSX.Element | null {
                     packFormat={packFormat}
                     versionId={version.id}
                     scale={settings.uiScale}
+                    fileContext={fileContext}
                     onPackFormatChange={(newPackFormat) =>
                         postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage)
                     }
@@ -359,6 +394,7 @@ export function App(): JSX.Element | null {
                     packFormat={packFormat}
                     versionId={version.id}
                     scale={settings.uiScale}
+                    fileContext={fileContext}
                     onPackFormatChange={handlePackFormatChange}
                     onScaleChange={handleScaleChange}
                 />

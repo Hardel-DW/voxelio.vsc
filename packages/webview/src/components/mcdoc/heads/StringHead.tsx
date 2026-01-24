@@ -5,6 +5,7 @@ import { getValues } from "@spyglassmc/mcdoc/lib/runtime/completer/index.js";
 import type { JSX } from "preact";
 import { Autocomplete } from "@/components/Autocomplete.tsx";
 import { Octicon } from "@/components/Icons.tsx";
+import { Select } from "@/components/Select.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import { formatIdentifier, getIdRegistry, isSelectRegistry, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { generateColor, intToHexRgb } from "@/services/Utils.ts";
@@ -43,18 +44,18 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
 
     // Misode: McdocRenderer.tsx:215-220 - Select for registry types
     if (isSelect) {
+        const options = completions.map((c) => ({ value: c.value, label: formatIdentifier(c.value) }));
+        if (nodeValue && !completions.some((c) => c.value === nodeValue)) {
+            options.unshift({ value: nodeValue, label: nodeValue });
+        }
+        const placeholder = nodeValue === "" || optional ? "-- unset --" : undefined;
         return (
-            <select
-                value={nodeValue || "__unset__"}
-                onInput={(e) => handleChange(e.currentTarget.value === "__unset__" ? "" : e.currentTarget.value)}>
-                {(nodeValue === "" || optional) && <option value="__unset__">-- unset --</option>}
-                {nodeValue && !completions.some((c) => c.value === nodeValue) && <option value={nodeValue}>{nodeValue}</option>}
-                {completions.map((c) => (
-                    <option key={c.value} value={c.value}>
-                        {formatIdentifier(c.value)}
-                    </option>
-                ))}
-            </select>
+            <Select
+                value={nodeValue}
+                options={options}
+                onChange={(v) => handleChange(v)}
+                placeholder={placeholder}
+            />
         );
     }
 

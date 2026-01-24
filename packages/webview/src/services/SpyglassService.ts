@@ -41,14 +41,25 @@ function detectFormat(content: string): DocumentFormat {
     const eol: "\n" | "\r\n" = content.includes("\r\n") ? "\r\n" : "\n";
     const lines = content.split(/\r?\n/);
 
+    let minIndent = Number.POSITIVE_INFINITY;
+
     for (const line of lines) {
-        if (!line.trim() || line.trim() === "{" || line.trim() === "[") continue;
+        if (!line.trim()) continue;
 
         const tabMatch = line.match(/^(\t+)/);
         if (tabMatch) return { tabSize: 1, insertSpaces: false, eol };
 
         const spaceMatch = line.match(/^( +)/);
-        if (spaceMatch) return { tabSize: spaceMatch[1].length, insertSpaces: true, eol };
+        if (spaceMatch) {
+            const indent = spaceMatch[1].length;
+            if (indent > 0 && indent < minIndent) {
+                minIndent = indent;
+            }
+        }
+    }
+
+    if (minIndent !== Number.POSITIVE_INFINITY) {
+        return { tabSize: minIndent, insertSpaces: true, eol };
     }
 
     return { tabSize: 2, insertSpaces: true, eol };
@@ -91,7 +102,7 @@ export class SpyglassService {
         const content = await this.readFile(uri);
         if (content === undefined) return undefined;
 
-        const lang = uri.endsWith(".json") ? "json" : "txt";
+        const lang = uri.endsWith(".json") || uri.endsWith(".mcmeta") ? "json" : "txt";
         await this.service.project.onDidOpen(uri, lang, 1, content);
         const docAndNode = await this.service.project.ensureClientManagedChecked(uri);
         if (!docAndNode) return undefined;

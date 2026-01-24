@@ -1,12 +1,11 @@
 import type { JSX } from "preact";
 import { Head } from "@/components/mcdoc/Head.tsx";
+import { Select } from "@/components/Select.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType, SimplifiedMcdocTypeNoUnion } from "@/services/McdocHelpers.ts";
 import { formatIdentifier, getChange, getDefault, quickEqualTypes, selectUnionMember } from "@/services/McdocHelpers.ts";
 
 type UnionTypeDef = Extract<SimplifiedMcdocType, { kind: "union" }>;
-
-const SPECIAL_UNSET = "__unset__";
 
 // Misode: McdocRenderer.tsx:384-417
 export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>): JSX.Element | null {
@@ -18,10 +17,9 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
     const selectedType = selectUnionMember(type, node);
     const memberIndex = selectedType ? type.members.findIndex((m) => quickEqualTypes(m, selectedType)) : -1;
 
-    const handleSelect = (e: JSX.TargetedEvent<HTMLSelectElement>): void => {
-        const newValue = e.currentTarget.value;
+    const handleSelect = (newValue: string): void => {
         ctx.makeEdit((range) => {
-            if (newValue === SPECIAL_UNSET) {
+            if (newValue === "") {
                 return undefined;
             }
             const newSelected = type.members[Number.parseInt(newValue, 10)];
@@ -32,19 +30,21 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
         });
     };
 
+    const options = type.members.map((member, index) => ({
+        value: String(index),
+        label: formatUnionMember(member, type.members.filter((m) => m !== member))
+    }));
+
+    const placeholder = selectedType === undefined || optional ? "-- unset --" : undefined;
+
     return (
         <>
-            <select value={memberIndex > -1 ? memberIndex : SPECIAL_UNSET} onInput={handleSelect}>
-                {(selectedType === undefined || optional) && <option value={SPECIAL_UNSET}>-- unset --</option>}
-                {type.members.map((member, index) => (
-                    <option key={String(index)} value={String(index)}>
-                        {formatUnionMember(
-                            member,
-                            type.members.filter((m) => m !== member)
-                        )}
-                    </option>
-                ))}
-            </select>
+            <Select
+                value={memberIndex > -1 ? String(memberIndex) : ""}
+                options={options}
+                onChange={handleSelect}
+                placeholder={placeholder}
+            />
             {selectedType && selectedType.kind !== "literal" && <Head type={selectedType} node={node} ctx={ctx} />}
         </>
     );

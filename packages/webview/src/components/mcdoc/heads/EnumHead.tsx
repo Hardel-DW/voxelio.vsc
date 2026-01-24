@@ -2,6 +2,7 @@ import { Range } from "@spyglassmc/core";
 import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { JSX } from "preact";
+import { Select } from "@/components/Select.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { formatIdentifier } from "@/services/McdocHelpers.ts";
@@ -12,8 +13,7 @@ type EnumType = Extract<SimplifiedMcdocType, { kind: "enum" }>;
 export function EnumHead({ type, node, ctx }: NodeProps<EnumType>): JSX.Element | null {
     const value = JsonStringNode.is(node) ? node.value : undefined;
 
-    const handleChange = (e: JSX.TargetedEvent<HTMLSelectElement>): void => {
-        const newValue = e.currentTarget.value;
+    const handleChange = (newValue: string): void => {
         if (value === newValue) return;
 
         ctx.makeEdit((range) => {
@@ -31,15 +31,10 @@ export function EnumHead({ type, node, ctx }: NodeProps<EnumType>): JSX.Element 
         });
     };
 
-    // Misode: direct <select> in node-header
-    return (
-        <select value={value ?? ""} onInput={handleChange}>
-            <option value="">Select...</option>
-            {type.values.map((enumValue) => (
-                <option key={String(enumValue.value)} value={String(enumValue.value)}>
-                    {formatIdentifier(String(enumValue.identifier ?? enumValue.value))}
-                </option>
-            ))}
-        </select>
-    );
+    const options = type.values.map((enumValue) => ({
+        value: String(enumValue.value),
+        label: formatIdentifier(String(enumValue.identifier ?? enumValue.value))
+    }));
+
+    return <Select value={value ?? ""} options={options} onChange={handleChange} placeholder="Select..." />;
 }

@@ -34,33 +34,63 @@ body {
     --size-line-height: calc(12px + var(--ui-scale) * 0.5px);
     --size-line-height-lg: calc(14px + var(--ui-scale) * 0.5px);
 
-    /* Colors */
-    --node-border: var(--vscode-input-border, #3f3f3f);
-    --node-background-label: var(--vscode-sideBar-background, #1b1b1b);
-    --node-background-input: var(--vscode-input-background, #272727);
-    --node-background-hover: var(--vscode-list-hoverBackground, #1f1f1f);
-    --node-text: var(--vscode-foreground, #dadada);
-    --node-text-dimmed: var(--vscode-descriptionForeground, #b4b4b4);
-    --node-selected: #7f5505;
-    --node-selected-hover: #724c04;
-    --node-selected-border: #6c4702;
-    --node-add: #487c13;
-    --node-add-hover: #396a08;
-    --node-add-border: #3b6e0c;
-    --node-remove: #9b341b;
-    --node-remove-hover: #86270f;
-    --node-remove-border: #7e1d05;
-    --node-help: #494949;
-    --node-indent-border: var(--vscode-editorIndentGuide-background, #454749);
-    --category-predicate: #306163;
-    --category-predicate-border: #224849;
-    --category-predicate-background: #1d3333;
-    --category-function: #5f5f5f;
-    --category-function-border: #4a4a4a;
-    --category-function-background: #2c2c2c;
-    --category-pool: #386330;
-    --category-pool-border: #2e4922;
-    --category-pool-background: #21331d;
+    /* Base colors (set via JS from settings) */
+    --color-primary: #1b1b1b;
+    --color-text: #dadada;
+    --color-add: #487c13;
+    --color-remove: #9b341b;
+    --color-selected: #7f5505;
+    --color-warning: #cca700;
+    --color-error: #f48771;
+    --color-predicate: #306163;
+    --color-function: #5f5f5f;
+    --color-pool: #386330;
+
+    /* Primary/background variants */
+    --node-background-label: var(--color-primary);
+    --node-background-input: color-mix(in oklch, var(--color-primary), white 8%);
+    --node-background-hover: color-mix(in oklch, var(--color-primary), white 4%);
+    --node-border: color-mix(in oklch, var(--color-primary), white 20%);
+    --node-indent-border: color-mix(in oklch, var(--color-primary), white 25%);
+    --node-help: color-mix(in oklch, var(--color-primary), white 30%);
+
+    /* Text variants */
+    --node-text: var(--color-text);
+    --node-text-dimmed: color-mix(in oklch, var(--color-text), black 25%);
+
+    /* Status colors */
+    --node-warning: var(--color-warning);
+    --node-error: var(--color-error);
+
+    /* Add variants */
+    --node-add: var(--color-add);
+    --node-add-hover: color-mix(in oklch, var(--color-add), black 15%);
+    --node-add-border: color-mix(in oklch, var(--color-add), black 20%);
+
+    /* Remove variants */
+    --node-remove: var(--color-remove);
+    --node-remove-hover: color-mix(in oklch, var(--color-remove), black 15%);
+    --node-remove-border: color-mix(in oklch, var(--color-remove), black 20%);
+
+    /* Selected variants */
+    --node-selected: var(--color-selected);
+    --node-selected-hover: color-mix(in oklch, var(--color-selected), black 15%);
+    --node-selected-border: color-mix(in oklch, var(--color-selected), black 20%);
+
+    /* Predicate category */
+    --category-predicate: var(--color-predicate);
+    --category-predicate-border: color-mix(in oklch, var(--color-predicate), black 25%);
+    --category-predicate-background: color-mix(in oklch, var(--color-predicate), black 45%);
+
+    /* Function category */
+    --category-function: var(--color-function);
+    --category-function-border: color-mix(in oklch, var(--color-function), black 25%);
+    --category-function-background: color-mix(in oklch, var(--color-function), black 45%);
+
+    /* Pool category */
+    --category-pool: var(--color-pool);
+    --category-pool-border: color-mix(in oklch, var(--color-pool), black 25%);
+    --category-pool-background: color-mix(in oklch, var(--color-pool), black 45%);
 }
 
 /* Message styles for loading/error states */
@@ -72,28 +102,28 @@ body {
 }
 
 .loading-message {
-    color: var(--vscode-descriptionForeground, #b4b4b4);
+    color: var(--node-text-dimmed);
 }
 
 .error-message {
-    color: var(--vscode-errorForeground, #f48771);
+    color: var(--node-error);
 }
 
 .info-panel {
     display: flex;
     flex-direction: column;
     gap: var(--size-gap-lg);
-    color: var(--vscode-foreground);
+    color: var(--node-text);
 }
 
 .warning-message {
     padding: 16px;
     font-size: var(--size-font-lg);
-    color: var(--vscode-editorWarning-foreground, #cca700);
+    color: var(--node-warning);
 }
 
 .info-panel .hint {
-    color: var(--vscode-descriptionForeground, #b4b4b4);
+    color: var(--node-text-dimmed);
     font-size: var(--size-font);
 }
 
@@ -839,18 +869,21 @@ button.move:disabled svg {
 
 /* Wiki Link */
 .wiki-link {
+    position: fixed;
+    bottom: 48px;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin: 16px 8px;
     padding: 8px 12px;
     font-size: 10px;
     color: var(--node-text-dimmed);
     text-decoration: none;
     background-color: var(--node-background-label);
     border: 1px solid var(--node-border);
-    border-radius: 6px;
+    border-right: none;
+    border-radius: 6px 0 0 6px;
     transition: color 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
@@ -1106,6 +1139,80 @@ button.move:disabled svg {
 
 .version-select-custom-btn:hover {
     background-color: var(--node-add-hover);
+}
+
+/* Custom Select Component */
+.select {
+    position: relative;
+    display: inline-flex;
+    min-width: 100px;
+}
+
+.select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--size-padding);
+    width: 100%;
+    height: var(--size-height);
+    padding: 0 var(--size-padding-lg);
+    font-size: var(--size-font);
+    color: var(--node-text);
+    background-color: var(--node-background-input);
+    border: 1px solid var(--node-border);
+    border-radius: var(--size-radius);
+    cursor: pointer;
+    text-align: left;
+}
+
+.select-trigger:hover {
+    background-color: var(--node-background-hover);
+}
+
+.select-value {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.select-arrow {
+    font-size: 8px;
+    color: var(--node-text-dimmed);
+}
+
+.select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 100;
+    min-width: 100%;
+    max-height: 200px;
+    margin: 0;
+    margin-top: 2px;
+    padding: var(--size-padding) 0;
+    list-style: none;
+    overflow-y: auto;
+    background-color: var(--node-background-label);
+    border: 1px solid var(--node-border);
+    border-radius: var(--size-radius);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.select-option {
+    padding: var(--size-padding) var(--size-padding-lg);
+    font-size: var(--size-font);
+    color: var(--node-text);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.select-option:hover {
+    background-color: var(--node-background-hover);
+}
+
+.select-option.selected {
+    background-color: var(--node-selected);
 }
 
 /* Browse button for empty states */

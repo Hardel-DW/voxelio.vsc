@@ -9,6 +9,7 @@ body {
     font-size: var(--size-font);
     color: var(--vscode-foreground);
     background: var(--vscode-editor-background);
+    padding: 0 !important;
 }
 
 :root {
@@ -346,6 +347,7 @@ button.toggle {
 
 .node-header button svg {
     fill: currentColor;
+    flex-shrink: 0;
 }
 
 .node-header button:enabled:hover {
@@ -734,6 +736,7 @@ button.move:disabled svg {
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    padding: 0 20px;
 }
 
 /* Header - always small size */
@@ -768,18 +771,18 @@ button.move:disabled svg {
 .header-title {
     font-size: var(--size-font-lg);
     font-weight: 600;
-    color: var(--node-text);
+    color: #dadada;
 }
 
 .header-subtitle {
     font-size: var(--size-font);
-    color: var(--node-text-dimmed);
+    color: #8a8a8a;
 }
 
 .header-separator {
     width: 100%;
     height: 1px;
-    background: linear-gradient(90deg, var(--node-text-dimmed), transparent);
+    background: linear-gradient(90deg, #8a8a8a, transparent);
     opacity: 0.3;
 }
 
@@ -908,9 +911,9 @@ button.move:disabled svg {
     align-items: center;
     justify-content: center;
     gap: 16px;
-    padding: 8px 12px;
-    background-color: var(--node-background-label);
-    border-top: 1px solid var(--node-border);
+    padding: 8px 0;
+    background-color: #1b1b1b;
+    border-top: 1px solid #3a3a3a;
 }
 
 .footer-link {
@@ -919,9 +922,13 @@ button.move:disabled svg {
     gap: 6px;
     padding: 4px 8px;
     font-size: 10px;
+    font-family: inherit;
     color: var(--node-text-dimmed);
     text-decoration: none;
+    background: none;
+    border: none;
     border-radius: 3px;
+    cursor: pointer;
     transition: color 0.15s, background-color 0.15s;
 }
 

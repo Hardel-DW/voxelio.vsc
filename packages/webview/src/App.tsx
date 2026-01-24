@@ -199,8 +199,14 @@ async function processFile(service: SpyglassService, realUri: string, content: s
     if (!packPath) return;
 
     const virtualUri = `file:///root/${packPath}`;
-    if (oldVirtualUri && oldVirtualUri !== virtualUri) {
+    const isSameFile = oldVirtualUri === virtualUri;
+
+    if (oldVirtualUri && !isSameFile) {
         service.unwatchFile(oldVirtualUri, onDocumentUpdated);
+    }
+
+    if (isSameFile) {
+        service.unwatchFile(virtualUri, onDocumentUpdated);
     }
 
     await service.writeFile(virtualUri, content, format);
@@ -270,13 +276,6 @@ export function App(): JSX.Element | null {
 
     const { packState, registries, service, docAndNode, loading, error, settings, virtualUri } = useSyncExternalStore(subscribe, getSnapshot);
 
-    const handleScaleChange = (newScale: number): void => {
-        const clamped = Math.max(1, Math.min(20, newScale));
-        applySettings({ ...settings, uiScale: clamped });
-        setState({ settings: { ...settings, uiScale: clamped } });
-        postMessage({ type: "updateSettings", settings: { uiScale: clamped } });
-    };
-
     const getFileContext = (): "data" | "assets" | "none" => {
         if (!virtualUri) return "none";
         if (virtualUri.includes("/data/")) return "data";
@@ -333,12 +332,10 @@ export function App(): JSX.Element | null {
                 <Header
                     packFormat={packFormat}
                     versionId={version.id}
-                    scale={settings.uiScale}
                     fileContext={fileContext}
                     onPackFormatChange={(newPackFormat) =>
                         postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage)
                     }
-                    onScaleChange={handleScaleChange}
                 />
                 <EmptyState icon={Octicon.alert} title="Error" description={error} />
                 <Footer />
@@ -394,10 +391,8 @@ export function App(): JSX.Element | null {
                 <Header
                     packFormat={packFormat}
                     versionId={version.id}
-                    scale={settings.uiScale}
                     fileContext={fileContext}
                     onPackFormatChange={handlePackFormatChange}
-                    onScaleChange={handleScaleChange}
                 />
                 {docAndNode ? (
                     <>

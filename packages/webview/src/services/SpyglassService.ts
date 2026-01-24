@@ -93,17 +93,23 @@ export class SpyglassService {
     async writeFile(uri: string, content: string, format?: FileFormat): Promise<void> {
         const document = this.documents.get(uri);
         if (document) {
-            document.undoStack.push(document.doc.getText());
-            document.redoStack = [];
             TextDocument.update(document.doc, [{ text: content }], document.doc.version + 1);
         } else if (format) {
             const doc = TextDocument.create(uri, "json", 1, content);
             this.documents.set(uri, { doc, format, undoStack: [], redoStack: [] });
         }
         await this.fs.writeFile(uri, content);
-        if (document) {
-            await this.notifyChange(document.doc);
+        await this.parseWithoutNotify(uri, content);
+    }
+
+    private async parseWithoutNotify(uri: string, content: string): Promise<void> {
+        const docAndNode = this.service.project.getClientManaged(uri);
+        if (docAndNode) {
+            await this.service.project.onDidChange(uri, [{ text: content }], docAndNode.doc.version + 1);
+        } else {
+            await this.service.project.onDidOpen(uri, "json", 1, content);
         }
+        await this.service.project.ensureClientManagedChecked(uri);
     }
 
     async applyEdit(uri: string, edit: (node: FileNode<AstNode>) => void): Promise<void> {

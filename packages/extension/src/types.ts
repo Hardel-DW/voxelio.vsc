@@ -79,4 +79,5 @@ export type WebviewMessage =
     | { readonly type: "changePackFormat"; readonly packFormat: number }
     | { readonly type: "requestFile"; readonly uri: string }
     | { readonly type: "saveFile"; readonly uri: string; readonly content: string }
-    | { readonly type: "updateSettings"; readonly settings: Partial<UserSettings> };
+    | { readonly type: "updateSettings"; readonly settings: Partial<UserSettings> }
+    | { readonly type: "openSettings" };

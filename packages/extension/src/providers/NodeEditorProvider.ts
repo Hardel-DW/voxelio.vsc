@@ -10,7 +10,7 @@ import type {
     WebviewView,
     WebviewViewProvider
 } from "vscode";
-import { Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace } from "vscode";
+import { Position, Range, RelativePattern, Uri, WorkspaceEdit, commands, window, workspace } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
@@ -168,6 +168,10 @@ export class NodeEditorProvider implements WebviewViewProvider {
         }
     }
 
+    private openSettings(): void {
+        commands.executeCommand("workbench.action.openSettings", "minode");
+    }
+
     private setupFileWatcher(): void {
         if (this.fileWatcher) {
             this.fileWatcher.dispose();
@@ -310,6 +314,9 @@ export class NodeEditorProvider implements WebviewViewProvider {
                 break;
             case "updateSettings":
                 this.updateSettings(message.settings);
+                break;
+            case "openSettings":
+                this.openSettings();
                 break;
         }
     }

@@ -318,7 +318,15 @@ export class NodeEditorProvider implements WebviewViewProvider {
             const uri = Uri.parse(uriString);
             const content = await workspace.fs.readFile(uri);
             const text = new TextDecoder().decode(content);
-            this.sendMessage({ type: "file", payload: { uri: uriString, content: text } });
+            const eol = text.includes("\r\n") ? "\r\n" : "\n";
+            this.sendMessage({
+                type: "file",
+                payload: {
+                    uri: uriString,
+                    content: text,
+                    format: { tabSize: 2, insertSpaces: true, eol }
+                }
+            });
         } catch {
             window.showErrorMessage("Mi-Node: Failed to read file");
         }

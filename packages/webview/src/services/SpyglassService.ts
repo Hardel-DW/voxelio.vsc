@@ -25,49 +25,15 @@ import { attribute, registerAttribute } from "@spyglassmc/mcdoc/lib/runtime/inde
 import { TextDocument } from "vscode-languageserver-textdocument";
 import type { VanillaMcdocSymbols, VersionMeta } from "@/services/DataFetcher.ts";
 import { fetchBlockStates, fetchRegistries, fetchVanillaMcdoc, fetchVersions } from "@/services/DataFetcher.ts";
-import type { VersionConfig } from "@/types.ts";
+import type { FileFormat, VersionConfig } from "@/types.ts";
 
 const VANILLA_MCDOC_URI = "mcdoc://vanilla-mcdoc/symbols.json";
 const CACHE_URI = "file:///cache/";
 const ROOT_URI = "file:///root/";
 
-interface DocumentFormat {
-    tabSize: number;
-    insertSpaces: boolean;
-    eol: "\n" | "\r\n";
-}
-
-function detectFormat(content: string): DocumentFormat {
-    const eol: "\n" | "\r\n" = content.includes("\r\n") ? "\r\n" : "\n";
-    const lines = content.split(/\r?\n/);
-
-    let minIndent = Number.POSITIVE_INFINITY;
-
-    for (const line of lines) {
-        if (!line.trim()) continue;
-
-        const tabMatch = line.match(/^(\t+)/);
-        if (tabMatch) return { tabSize: 1, insertSpaces: false, eol };
-
-        const spaceMatch = line.match(/^( +)/);
-        if (spaceMatch) {
-            const indent = spaceMatch[1].length;
-            if (indent > 0 && indent < minIndent) {
-                minIndent = indent;
-            }
-        }
-    }
-
-    if (minIndent !== Number.POSITIVE_INFINITY) {
-        return { tabSize: minIndent, insertSpaces: true, eol };
-    }
-
-    return { tabSize: 2, insertSpaces: true, eol };
-}
-
 interface ClientDocument {
     doc: TextDocument;
-    format: DocumentFormat;
+    format: FileFormat;
     undoStack: string[];
     redoStack: string[];
 }
@@ -108,8 +74,9 @@ export class SpyglassService {
         if (!docAndNode) return undefined;
 
         const existing = this.documents.get(uri);
-        const format = existing?.format ?? detectFormat(content);
-        this.documents.set(uri, { doc: docAndNode.doc, format, undoStack: [], redoStack: [] });
+        if (existing) {
+            existing.doc = docAndNode.doc;
+        }
 
         return docAndNode;
     }
@@ -123,12 +90,15 @@ export class SpyglassService {
         }
     }
 
-    async writeFile(uri: string, content: string): Promise<void> {
+    async writeFile(uri: string, content: string, format?: FileFormat): Promise<void> {
         const document = this.documents.get(uri);
         if (document) {
             document.undoStack.push(document.doc.getText());
             document.redoStack = [];
             TextDocument.update(document.doc, [{ text: content }], document.doc.version + 1);
+        } else if (format) {
+            const doc = TextDocument.create(uri, "json", 1, content);
+            this.documents.set(uri, { doc, format, undoStack: [], redoStack: [] });
         }
         await this.fs.writeFile(uri, content);
         if (document) {

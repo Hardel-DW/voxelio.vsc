@@ -175,7 +175,7 @@ async function tryCreateService(): Promise<void> {
         setState({ service: newService, loading: false });
 
         if (pendingFile) {
-            await processFile(newService, pendingFile.uri, pendingFile.content, virtualUri);
+            await processFile(newService, pendingFile.uri, pendingFile.content, pendingFile.format, virtualUri);
         }
     } catch (err) {
         setState({ error: err instanceof Error ? err.message : "Failed to init", loading: false });
@@ -242,7 +242,7 @@ function handleMessage(event: MessageEvent<ExtensionMessage>): void {
             handleRegistries(msg.payload);
             break;
         case "file":
-            handleFile(msg.payload.uri, msg.payload.content);
+            handleFile(msg.payload.uri, msg.payload.content, msg.payload.format);
             break;
     }
 }

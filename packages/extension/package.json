@@ -44,7 +44,25 @@
                 "title": "Open Node Editor",
                 "category": "Mi-Node"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Mi-Node",
+            "properties": {
+                "minode.uiScale": {
+                    "type": "number",
+                    "default": 1,
+                    "minimum": 1,
+                    "maximum": 20,
+                    "description": "UI scale factor for the node editor (1-20)"
+                },
+                "minode.accentColor": {
+                    "type": "string",
+                    "default": "#4a9f4a",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Primary accent color in hex format (e.g., #4a9f4a). Variants are auto-calculated using oklch."
+                }
+            }
+        }
     },
     "scripts": {
         "build": "tsdown",

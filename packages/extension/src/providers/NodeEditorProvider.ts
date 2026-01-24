@@ -1,4 +1,5 @@
 import type {
+    ConfigurationChangeEvent,
     Disposable,
     ExtensionContext,
     FileSystemWatcher,
@@ -13,7 +14,7 @@ import { Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
-import type { ExtensionMessage, MutableRegistries, PackStatus, RegistriesPayload, WebviewMessage } from "@/types.ts";
+import type { ExtensionMessage, MutableRegistries, PackStatus, RegistriesPayload, UserSettings, WebviewMessage } from "@/types.ts";
 
 export class NodeEditorProvider implements WebviewViewProvider {
     static readonly viewType = "minode.nodeEditor";
@@ -56,16 +57,16 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private initializeWebview(): void {
-        this.sendMessage({ type: "init", payload: { pack: { state: "notFound" } } });
+        this.sendMessage({ type: "init", payload: { pack: { state: "notFound" }, settings: this.getSettings() } });
 
         if (window.activeTextEditor) {
             this.processEditor(window.activeTextEditor);
         }
     }
 
-    private toPackStatus(result: import("@/types.ts").PackDetectionResult): PackStatus {
+    private toPackStatus(result: import("@/types.ts").PackDetectionResult, hasValidFile: boolean): PackStatus {
         if (result.status === "notFound") {
-            return { state: "notFound" };
+            return hasValidFile ? { state: "noPackMeta" } : { state: "notFound" };
         }
 
         if (result.status === "invalid") {
@@ -129,8 +130,44 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private registerEditorListeners(): void {
         this.disposables.push(
             window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChanged(editor)),
-            workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e))
+            workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e)),
+            workspace.onDidChangeConfiguration((e) => this.onConfigurationChanged(e))
         );
+    }
+
+    private onConfigurationChanged(event: ConfigurationChangeEvent): void {
+        if (event.affectsConfiguration("minode")) {
+            this.sendMessage({ type: "init", payload: { pack: this.getCurrentPackStatus(), settings: this.getSettings() } });
+        }
+    }
+
+    private getCurrentPackStatus(): PackStatus {
+        if (!this.currentPackFormat) {
+            return { state: "notFound" };
+        }
+        const version = getVersionFromPackFormat(this.currentPackFormat);
+        if (!version) {
+            return { state: "invalid", reason: `Unknown pack format: ${this.currentPackFormat}` };
+        }
+        return { state: "found", packFormat: this.currentPackFormat, version };
+    }
+
+    private getSettings(): UserSettings {
+        const config = workspace.getConfiguration("minode");
+        return {
+            uiScale: config.get<number>("uiScale", 1),
+            accentColor: config.get<string>("accentColor", "#4a9f4a")
+        };
+    }
+
+    private updateSettings(settings: Partial<UserSettings>): void {
+        const config = workspace.getConfiguration("minode");
+        if (settings.uiScale !== undefined) {
+            config.update("uiScale", settings.uiScale, true);
+        }
+        if (settings.accentColor !== undefined) {
+            config.update("accentColor", settings.accentColor, true);
+        }
     }
 
     private setupFileWatcher(): void {
@@ -162,12 +199,12 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private async changePackFormat(packFormat: number): Promise<void> {
         const version = getVersionFromPackFormat(packFormat);
         if (!version) {
-            this.sendMessage({ type: "init", payload: { pack: { state: "invalid", reason: `Unknown pack format: ${packFormat}` } } });
+            this.sendMessage({ type: "init", payload: { pack: { state: "invalid", reason: `Unknown pack format: ${packFormat}` }, settings: this.getSettings() } });
             return;
         }
 
         this.currentPackFormat = packFormat;
-        this.sendMessage({ type: "init", payload: { pack: { state: "found", packFormat, version } } });
+        this.sendMessage({ type: "init", payload: { pack: { state: "found", packFormat, version }, settings: this.getSettings() } });
         await this.loadRegistries(version);
     }
 
@@ -193,7 +230,9 @@ export class NodeEditorProvider implements WebviewViewProvider {
         const result = await this.packDetector.findPackRootFromFile(fileUri);
 
         if (result.status !== "found") {
-            this.sendMessage({ type: "init", payload: { pack: this.toPackStatus(result) } });
+            if (!this.currentPackFormat) {
+                this.sendMessage({ type: "init", payload: { pack: this.toPackStatus(result, true), settings: this.getSettings() } });
+            }
             return;
         }
 
@@ -204,9 +243,9 @@ export class NodeEditorProvider implements WebviewViewProvider {
             return;
         }
 
-        const packStatus = this.toPackStatus(result);
+        const packStatus = this.toPackStatus(result, true);
         if (packStatus.state !== "found") {
-            this.sendMessage({ type: "init", payload: { pack: packStatus } });
+            this.sendMessage({ type: "init", payload: { pack: packStatus, settings: this.getSettings() } });
             return;
         }
 
@@ -214,7 +253,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
         this.currentPackFormat = result.pack.packFormat;
         this.setupFileWatcher();
 
-        this.sendMessage({ type: "init", payload: { pack: packStatus } });
+        this.sendMessage({ type: "init", payload: { pack: packStatus, settings: this.getSettings() } });
         await this.loadRegistries(packStatus.version);
     }
 
@@ -258,6 +297,9 @@ export class NodeEditorProvider implements WebviewViewProvider {
                 break;
             case "saveFile":
                 await this.handleSaveFile(message.uri, message.content);
+                break;
+            case "updateSettings":
+                this.updateSettings(message.settings);
                 break;
         }
     }

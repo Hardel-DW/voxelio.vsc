@@ -8,16 +8,18 @@ import { Footer } from "@/components/Footer.tsx";
 import { Header } from "@/components/Header.tsx";
 import { Octicon } from "@/components/Icons.tsx";
 import { JsonFileView } from "@/components/JsonFileView.tsx";
+import { VersionSelect } from "@/components/VersionSelect.tsx";
 import { WikiLink } from "@/components/WikiLink.tsx";
 import { getWikiLabel, getWikiUrl } from "@/config.ts";
-import { getPersistedState, postMessage, setPersistedState } from "@/lib/vscode.ts";
+import { getManualPackFormat, getPersistedState, postMessage, setManualPackFormat, setPersistedState } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
-import type { ExtensionMessage, PackStatus, RegistriesPayload, VersionConfig, WebviewMessage } from "@/types.ts";
+import type { ExtensionMessage, PackStatus, RegistriesPayload, UserSettings, VersionConfig, WebviewMessage } from "@/types.ts";
 
 type PackState =
     | { status: "loading" }
     | { status: "notFound" }
+    | { status: "noPackMeta" }
     | { status: "invalid"; reason: string }
     | { status: "ready"; packFormat: number; version: VersionConfig };
 
@@ -36,7 +38,10 @@ interface AppState {
     loading: boolean;
     error: string | null;
     pendingFile: PendingFile | null;
+    settings: UserSettings;
 }
+
+const DEFAULT_SETTINGS: UserSettings = { uiScale: 1, accentColor: "#4a9f4a" };
 
 const initialState: AppState = {
     packState: { status: "loading" },
@@ -47,7 +52,8 @@ const initialState: AppState = {
     realUri: null,
     loading: false,
     error: null,
-    pendingFile: null
+    pendingFile: null,
+    settings: DEFAULT_SETTINGS
 };
 
 let state = initialState;
@@ -73,17 +79,36 @@ function extractPackPath(uri: string): string | null {
     return match[1].replace(/\\/g, "/");
 }
 
-function handleInit(pack: PackStatus): void {
+function applySettings(settings: UserSettings): void {
+    const root = document.documentElement;
+    root.style.setProperty("--ui-scale", String(settings.uiScale));
+    root.style.setProperty("--accent-color", settings.accentColor);
+}
+
+function handleInit(pack: PackStatus, settings: UserSettings): void {
+    applySettings(settings);
+    setState({ settings });
+
     if (pack.state === "notFound") {
         setState({ packState: { status: "notFound" }, error: null, service: null, registries: null });
         return;
     }
 
-    if (pack.state === "invalid") {
-        setState({ packState: { status: "invalid", reason: pack.reason }, error: null, service: null, registries: null });
+    if (pack.state === "noPackMeta" || pack.state === "invalid") {
+        const savedFormat = getManualPackFormat();
+        if (savedFormat) {
+            postMessage({ type: "changePackFormat", packFormat: savedFormat });
+            return;
+        }
+        if (pack.state === "noPackMeta") {
+            setState({ packState: { status: "noPackMeta" }, error: null, service: null, registries: null });
+        } else {
+            setState({ packState: { status: "invalid", reason: pack.reason }, error: null, service: null, registries: null });
+        }
         return;
     }
 
+    setManualPackFormat(undefined);
     setState({
         packState: { status: "ready", packFormat: pack.packFormat, version: pack.version },
         error: null,
@@ -186,7 +211,7 @@ function handleMessage(event: MessageEvent<ExtensionMessage>): void {
     const msg = event.data;
     switch (msg.type) {
         case "init":
-            handleInit(msg.payload.pack);
+            handleInit(msg.payload.pack, msg.payload.settings);
             break;
         case "registries":
             handleRegistries(msg.payload);
@@ -217,7 +242,14 @@ export function App(): JSX.Element | null {
         return true;
     });
 
-    const { packState, registries, service, docAndNode, loading, error } = useSyncExternalStore(subscribe, getSnapshot);
+    const { packState, registries, service, docAndNode, loading, error, settings } = useSyncExternalStore(subscribe, getSnapshot);
+
+    const handleScaleChange = (newScale: number): void => {
+        const clamped = Math.max(1, Math.min(20, newScale));
+        applySettings({ ...settings, uiScale: clamped });
+        setState({ settings: { ...settings, uiScale: clamped } });
+        postMessage({ type: "updateSettings", settings: { uiScale: clamped } });
+    };
 
     if (packState.status === "loading" || packState.status === "notFound") {
         return (
@@ -232,10 +264,27 @@ export function App(): JSX.Element | null {
         );
     }
 
-    if (packState.status === "invalid") {
+    if (packState.status === "noPackMeta" || packState.status === "invalid") {
+        const handleVersionSelect = (packFormat: number): void => {
+            setManualPackFormat(packFormat);
+            postMessage({ type: "changePackFormat", packFormat } satisfies WebviewMessage);
+        };
+
+        const isInvalid = packState.status === "invalid";
+        const title = isInvalid ? "Invalid pack.mcmeta" : "No pack.mcmeta found";
+        const description = isInvalid ? packState.reason : "Select a Minecraft version to start editing.";
+
         return (
             <div class="editor-layout">
-                <EmptyState icon={Octicon.alert} title="Invalid pack.mcmeta" description={packState.reason} />
+                <div class="editor-content">
+                    <header class="editor-header">
+                        <div class="header-row">
+                            <VersionSelect packFormat={48} versionId="Select version" onSelect={handleVersionSelect} />
+                        </div>
+                        <span class="header-separator" />
+                    </header>
+                    <EmptyState icon={isInvalid ? Octicon.alert : Octicon.file_code} title={title} description={description} />
+                </div>
                 <Footer />
             </div>
         );
@@ -249,9 +298,11 @@ export function App(): JSX.Element | null {
                 <Header
                     packFormat={packFormat}
                     versionId={version.id}
+                    scale={settings.uiScale}
                     onPackFormatChange={(newPackFormat) =>
                         postMessage({ type: "changePackFormat", packFormat: newPackFormat } satisfies WebviewMessage)
                     }
+                    onScaleChange={handleScaleChange}
                 />
                 <EmptyState icon={Octicon.alert} title="Error" description={error} />
                 <Footer />
@@ -304,7 +355,13 @@ export function App(): JSX.Element | null {
     return (
         <div class="editor-layout">
             <div class="editor-content">
-                <Header packFormat={packFormat} versionId={version.id} onPackFormatChange={handlePackFormatChange} />
+                <Header
+                    packFormat={packFormat}
+                    versionId={version.id}
+                    scale={settings.uiScale}
+                    onPackFormatChange={handlePackFormatChange}
+                    onScaleChange={handleScaleChange}
+                />
                 {docAndNode ? (
                     <>
                         <JsonFileView docAndNode={docAndNode} service={service} />

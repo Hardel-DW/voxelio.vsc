@@ -3,7 +3,7 @@ import type { WebviewMessage } from "@/types.ts";
 interface PersistedState {
     realUri?: string;
     virtualUri?: string;
-    uiScale?: number;
+    manualPackFormat?: number;
 }
 
 interface VsCodeApi {
@@ -38,19 +38,12 @@ export function saveFile(uri: string, content: string): void {
 
 export const MIN_SCALE = 1;
 export const MAX_SCALE = 20;
-export const DEFAULT_SCALE = 1;
 
-export function getUiScale(): number {
-    return getPersistedState()?.uiScale ?? DEFAULT_SCALE;
+export function getManualPackFormat(): number | undefined {
+    return getPersistedState()?.manualPackFormat;
 }
 
-export function setUiScale(scale: number): void {
-    const clamped = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+export function setManualPackFormat(packFormat: number | undefined): void {
     const state = getPersistedState() ?? {};
-    setPersistedState({ ...state, uiScale: clamped });
-    applyUiScale(clamped);
-}
-
-export function applyUiScale(scale: number): void {
-    document.documentElement.style.setProperty("--ui-scale", String(scale));
+    setPersistedState({ ...state, manualPackFormat: packFormat });
 }

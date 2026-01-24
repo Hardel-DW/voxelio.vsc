@@ -5,8 +5,8 @@ import { getValues } from "@spyglassmc/mcdoc/lib/runtime/completer/index.js";
 import type { JSX } from "preact";
 import { Autocomplete } from "@/components/Autocomplete.tsx";
 import { Octicon } from "@/components/Icons.tsx";
-import { Select } from "@/components/Select.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
+import { Select } from "@/components/Select.tsx";
 import { formatIdentifier, getIdRegistry, isSelectRegistry, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { generateColor, intToHexRgb } from "@/services/Utils.ts";
 
@@ -49,14 +49,7 @@ export function StringHead({ type, node, ctx, optional, excludeStrings }: NodePr
             options.unshift({ value: nodeValue, label: nodeValue });
         }
         const placeholder = nodeValue === "" || optional ? "-- unset --" : undefined;
-        return (
-            <Select
-                value={nodeValue}
-                options={options}
-                onChange={(v) => handleChange(v)}
-                placeholder={placeholder}
-            />
-        );
+        return <Select value={nodeValue} options={options} onChange={(v) => handleChange(v)} placeholder={placeholder} />;
     }
 
     // Misode: McdocRenderer.tsx:221-225 - Input with datalist for autocomplete

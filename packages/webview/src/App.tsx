@@ -194,7 +194,13 @@ async function handleFile(realUri: string, content: string, format: FileFormat):
     await processFile(service, realUri, content, format, oldVirtualUri);
 }
 
-async function processFile(service: SpyglassService, realUri: string, content: string, format: FileFormat, oldVirtualUri: string | null): Promise<void> {
+async function processFile(
+    service: SpyglassService,
+    realUri: string,
+    content: string,
+    format: FileFormat,
+    oldVirtualUri: string | null
+): Promise<void> {
     const packPath = extractPackPath(realUri);
     if (!packPath) return;
 
@@ -274,7 +280,10 @@ export function App(): JSX.Element | null {
         return true;
     });
 
-    const { packState, registries, service, docAndNode, loading, error, settings, virtualUri } = useSyncExternalStore(subscribe, getSnapshot);
+    const { packState, registries, service, docAndNode, loading, error, settings, virtualUri } = useSyncExternalStore(
+        subscribe,
+        getSnapshot
+    );
 
     const getFileContext = (): "data" | "assets" | "none" => {
         if (!virtualUri) return "none";

@@ -64,9 +64,7 @@ export class PackDetector {
         const registries: MutableRegistries = {};
 
         const dataJsonPattern = packRoot ? new vscode.RelativePattern(packRoot, "data/**/*.json") : "data/**/*.json";
-        const assetsJsonPattern = packRoot
-            ? new vscode.RelativePattern(packRoot, "assets/**/*.json")
-            : "assets/**/*.json";
+        const assetsJsonPattern = packRoot ? new vscode.RelativePattern(packRoot, "assets/**/*.json") : "assets/**/*.json";
         const mcfunctionPattern = packRoot
             ? new vscode.RelativePattern(packRoot, "data/**/function/**/*.mcfunction")
             : "data/**/function/**/*.mcfunction";
@@ -107,11 +105,7 @@ export class PackDetector {
         }
     }
 
-    private parsePackPath(
-        fsPath: string,
-        ext: string,
-        packType: "data" | "assets"
-    ): { category: string; resourceId: string } | null {
+    private parsePackPath(fsPath: string, ext: string, packType: "data" | "assets"): { category: string; resourceId: string } | null {
         const normalizedPath = fsPath.replace(/\\/g, "/");
         const extEscaped = ext.replace(".", "\\.");
         const regex = new RegExp(`${packType}/([^/]+)/(.+)${extEscaped}$`);

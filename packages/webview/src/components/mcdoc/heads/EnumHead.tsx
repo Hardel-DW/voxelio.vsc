@@ -2,8 +2,8 @@ import { Range } from "@spyglassmc/core";
 import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
 import type { JSX } from "preact";
-import { Select } from "@/components/Select.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
+import { Select } from "@/components/Select.tsx";
 import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { formatIdentifier } from "@/services/McdocHelpers.ts";
 

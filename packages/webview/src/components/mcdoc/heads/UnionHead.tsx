@@ -1,7 +1,7 @@
 import type { JSX } from "preact";
 import { Head } from "@/components/mcdoc/Head.tsx";
-import { Select } from "@/components/Select.tsx";
 import type { NodeProps } from "@/components/mcdoc/types.ts";
+import { Select } from "@/components/Select.tsx";
 import type { SimplifiedMcdocType, SimplifiedMcdocTypeNoUnion } from "@/services/McdocHelpers.ts";
 import { formatIdentifier, getChange, getDefault, quickEqualTypes, selectUnionMember } from "@/services/McdocHelpers.ts";
 
@@ -32,7 +32,10 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
 
     const options = type.members.map((member, index) => ({
         value: String(index),
-        label: formatUnionMember(member, type.members.filter((m) => m !== member))
+        label: formatUnionMember(
+            member,
+            type.members.filter((m) => m !== member)
+        )
     }));
 
     const placeholder = selectedType === undefined || optional ? "-- unset --" : undefined;

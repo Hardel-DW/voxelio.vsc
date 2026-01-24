@@ -45,7 +45,7 @@ export function Select({ value, options, onChange, placeholder = "Select..." }: 
     };
 
     return (
-        <div class="select" ref={containerRef} onBlur={handleBlur} tabIndex={0} onKeyDown={handleKeyDown}>
+        <div class="select" role="listbox" ref={containerRef} onBlur={handleBlur} onKeyDown={handleKeyDown}>
             <button type="button" class="select-trigger" onClick={handleToggle}>
                 <span class="select-value">{displayText}</span>
                 <span class="select-arrow">{isOpen ? "\u25B2" : "\u25BC"}</span>

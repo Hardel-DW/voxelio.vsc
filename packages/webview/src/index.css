@@ -347,7 +347,6 @@ button.toggle {
 
 .node-header button svg {
     fill: currentColor;
-    flex-shrink: 0;
 }
 
 .node-header button:enabled:hover {
@@ -771,18 +770,18 @@ button.move:disabled svg {
 .header-title {
     font-size: var(--size-font-lg);
     font-weight: 600;
-    color: #dadada;
+    color: var(--node-text);
 }
 
 .header-subtitle {
     font-size: var(--size-font);
-    color: #8a8a8a;
+    color: var(--node-text-dimmed);
 }
 
 .header-separator {
     width: 100%;
     height: 1px;
-    background: linear-gradient(90deg, #8a8a8a, transparent);
+    background: linear-gradient(90deg, var(--node-text-dimmed), transparent);
     opacity: 0.3;
 }
 
@@ -912,8 +911,8 @@ button.move:disabled svg {
     justify-content: center;
     gap: 16px;
     padding: 8px 0;
-    background-color: #1b1b1b;
-    border-top: 1px solid #3a3a3a;
+    background-color: var(--node-background-label);
+    border-top: 1px solid var(--node-border);
 }
 
 .footer-link {

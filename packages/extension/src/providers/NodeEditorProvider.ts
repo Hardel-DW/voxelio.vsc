@@ -10,7 +10,7 @@ import type {
     WebviewView,
     WebviewViewProvider
 } from "vscode";
-import { Position, Range, RelativePattern, Uri, WorkspaceEdit, commands, window, workspace } from "vscode";
+import { commands, Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
 import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
@@ -201,7 +201,10 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private async changePackFormat(packFormat: number): Promise<void> {
         const version = getVersionFromPackFormat(packFormat);
         if (!version) {
-            this.sendMessage({ type: "init", payload: { pack: { state: "invalid", reason: `Unknown pack format: ${packFormat}` }, settings: this.getSettings() } });
+            this.sendMessage({
+                type: "init",
+                payload: { pack: { state: "invalid", reason: `Unknown pack format: ${packFormat}` }, settings: this.getSettings() }
+            });
             return;
         }
 

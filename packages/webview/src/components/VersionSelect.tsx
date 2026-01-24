@@ -115,7 +115,9 @@ export function VersionSelect({ packFormat, versionId, packType: initialPackType
     return (
         <div class="version-select" ref={containerRef} onBlur={handleBlur} role="combobox" aria-expanded={isOpen} tabIndex={0}>
             <button type="button" class="version-select-trigger" onClick={handleToggle}>
-                <span class="version-select-title">{initialPackType ?? "Minecraft"} {versionId}</span>
+                <span class="version-select-title">
+                    {initialPackType ?? "Minecraft"} {versionId}
+                </span>
                 <span class="version-select-subtitle">Pack Format: {packFormat}</span>
             </button>
             {isOpen && (

@@ -22,7 +22,7 @@ import { attribute, registerAttribute } from "@spyglassmc/mcdoc/lib/runtime/inde
 import type { FileFormat, McdocFile, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared";
 import { extractZip, makeZip } from "@voxelio/zip";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { fetchBlockStates, fetchRegistries, fetchVanillaMcdoc, fetchVersions } from "@/services/DataFetcher.ts";
+import { fetchBlockStates, fetchVanillaMcdoc, fetchVersions } from "@/services/DataFetcher.ts";
 import { MemoryFileSystem } from "./MemoryFileSystem.ts";
 
 const VANILLA_MCDOC_URI = "mcdoc://vanilla-mcdoc/symbols.json";
@@ -197,7 +197,7 @@ export class SpyglassService {
 
     static async create(
         version: VersionConfig,
-        customRegistries?: Record<string, string[]>,
+        registries: Record<string, string[]>,
         customResources?: Record<string, { category: string; pack?: string }>,
         mcdocFiles?: readonly McdocFile[]
     ): Promise<SpyglassService> {
@@ -228,9 +228,12 @@ export class SpyglassService {
                         gameVersion: version.ref as ReleaseVersion,
                         dependencies,
                         customResources: customResources ?? {}
+                    },
+                    lint: {
+                        idOmitDefaultNamespace: false
                     }
                 }),
-                initializers: [mcdocInitialize, createInitializer(version, customRegistries, mcdocFiles, fs)]
+                initializers: [mcdocInitialize, createInitializer(version, new Map(Object.entries(registries)), mcdocFiles, fs)]
             }
         });
 
@@ -241,7 +244,7 @@ export class SpyglassService {
 
 function createInitializer(
     version: VersionConfig,
-    customRegistries?: Record<string, string[]>,
+    registries: Map<string, string[]>,
     mcdocFiles?: readonly McdocFile[],
     fs?: MemoryFileSystem
 ): ProjectInitializer {
@@ -263,12 +266,10 @@ function createInitializer(
             });
         }
 
-        const vanillaRegistries = await fetchRegistries(version);
         const blocks = await fetchBlockStates(version);
         const versions = await fetchVersions();
-        const mergedRegistries = mergeRegistries(vanillaRegistries, customRegistries);
         const summary: McmetaSummary = {
-            registries: Object.fromEntries(mergedRegistries),
+            registries: Object.fromEntries(registries),
             blocks: Object.fromEntries(blocks) as McmetaStates,
             fluids: Fluids,
             commands: { type: "root", children: {} }
@@ -331,27 +332,6 @@ async function compressMcdocFiles(files: readonly McdocFile[]): Promise<Uint8Arr
     }
 
     return result as Uint8Array<ArrayBuffer>;
-}
-
-function mergeRegistries(vanilla: Map<string, string[]>, custom?: Record<string, string[]>): Map<string, string[]> {
-    if (!custom) return vanilla;
-
-    const merged = new Map(vanilla);
-
-    for (const [category, entries] of Object.entries(custom)) {
-        const existing = merged.get(category) ?? [];
-        const combined = [...existing];
-
-        for (const entry of entries) {
-            if (!combined.includes(entry)) {
-                combined.push(entry);
-            }
-        }
-
-        merged.set(category, combined.sort());
-    }
-
-    return merged;
 }
 
 function createMcdocRegistrar(symbols: VanillaMcdocSymbols): SymbolRegistrar {

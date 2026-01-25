@@ -133,6 +133,9 @@
         "biome:format": "biome format --write ./src",
         "biome:unsafefix": "biome check --write --unsafe ./src"
     },
+    "dependencies": {
+        "@voxel/shared": "workspace:*"
+    },
     "devDependencies": {
         "@types/vscode": "^1.96.0",
         "tsdown": "0.17.0-beta.4"

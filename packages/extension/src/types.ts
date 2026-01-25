@@ -1,89 +1,11 @@
+import type { PackInfo as SharedPackInfo } from "@voxel/shared/types";
 import type { Uri } from "vscode";
 
-export interface PackInfo {
+export interface PackInfo extends SharedPackInfo {
     readonly uri: Uri;
-    readonly packFormat: number;
-    readonly description?: string;
 }
 
 export type PackDetectionResult =
     | { readonly status: "found"; readonly pack: PackInfo }
     | { readonly status: "notFound" }
     | { readonly status: "invalid"; readonly uri: Uri; readonly reason: string };
-
-export interface VersionConfig {
-    readonly id: string;
-    readonly ref: string;
-    readonly dynamic?: boolean;
-}
-
-export type PackStatus =
-    | { readonly state: "found"; readonly packFormat: number; readonly version: VersionConfig }
-    | { readonly state: "notFound" }
-    | { readonly state: "noPackMeta" }
-    | { readonly state: "invalid"; readonly reason: string };
-
-export interface ColorSettings {
-    readonly primary: string;
-    readonly text: string;
-    readonly add: string;
-    readonly remove: string;
-    readonly selected: string;
-    readonly warning: string;
-    readonly error: string;
-    readonly predicate: string;
-    readonly function: string;
-    readonly pool: string;
-}
-
-export interface UserSettings {
-    readonly uiScale: number;
-    readonly largeFileThreshold: number;
-    readonly colors: ColorSettings;
-}
-
-export interface InitPayload {
-    readonly pack: PackStatus;
-    readonly settings: UserSettings;
-}
-
-export interface RegistriesPayload {
-    readonly [registry: string]: readonly string[];
-}
-
-export interface MutableRegistries {
-    [registry: string]: string[];
-}
-
-export interface FileFormat {
-    readonly tabSize: number;
-    readonly insertSpaces: boolean;
-    readonly eol: "\n" | "\r\n";
-}
-
-export interface FilePayload {
-    readonly uri: string;
-    readonly content: string;
-    readonly format: FileFormat;
-}
-
-export interface UnsupportedFilePayload {
-    readonly uri: string;
-    readonly reason: string;
-}
-
-export type ExtensionMessage =
-    | { readonly type: "init"; readonly payload: InitPayload }
-    | { readonly type: "settings"; readonly payload: UserSettings }
-    | { readonly type: "registries"; readonly payload: RegistriesPayload }
-    | { readonly type: "file"; readonly payload: FilePayload }
-    | { readonly type: "unsupportedFile"; readonly payload: UnsupportedFilePayload };
-
-export type WebviewMessage =
-    | { readonly type: "ready" }
-    | { readonly type: "refreshRegistries" }
-    | { readonly type: "changePackFormat"; readonly packFormat: number }
-    | { readonly type: "requestFile"; readonly uri: string }
-    | { readonly type: "saveFile"; readonly uri: string; readonly content: string }
-    | { readonly type: "updateSettings"; readonly settings: Partial<UserSettings> }
-    | { readonly type: "openSettings" };

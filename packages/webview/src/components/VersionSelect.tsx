@@ -1,6 +1,6 @@
+import { getVersionsForPackType, type PackType } from "@voxel/shared/versions";
 import type { JSX } from "preact";
 import { useRef, useState } from "preact/hooks";
-import { type PackType, getVersionsForPackType } from "@/lib/versions.ts";
 
 interface VersionSelectProps {
     packFormat: number;
@@ -81,7 +81,7 @@ export function VersionSelect({ packFormat, versionId, packType: initialPackType
                                     type="button"
                                     class={`version-select-item ${v.packFormat === packFormat ? "selected" : ""}`}
                                     onClick={() => handleSelect(v.packFormat)}>
-                                    <span class="version-select-item-version">{v.versionId}</span>
+                                    <span class="version-select-item-version">{v.version.id}</span>
                                     <span class="version-select-item-format">Format {v.packFormat}</span>
                                 </button>
                             </li>

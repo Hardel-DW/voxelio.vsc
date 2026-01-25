@@ -1,4 +1,4 @@
-import type { ColorSettings } from "@/types.ts";
+import type { ColorSettings } from "@voxel/shared/types";
 
 export function applyColorSettings(colors: ColorSettings): void {
     const root = document.documentElement;

@@ -1,5 +1,15 @@
 import type { DocAndNode } from "@spyglassmc/core";
 import { dissectUri } from "@spyglassmc/java-edition/lib/binder/index.js";
+import { DEFAULT_SETTINGS } from "@voxel/shared/constants";
+import type {
+    ExtensionMessage,
+    FileFormat,
+    PackStatus,
+    RegistriesPayload,
+    UserSettings,
+    VersionConfig,
+    WebviewMessage
+} from "@voxel/shared/types";
 import type { JSX } from "preact";
 import { useSyncExternalStore } from "preact/compat";
 import { useState } from "preact/hooks";
@@ -15,7 +25,6 @@ import { applyColorSettings } from "@/lib/colors.ts";
 import { getManualPackFormat, getPersistedState, postMessage, setManualPackFormat, setPersistedState } from "@/lib/vscode.ts";
 import type { SpyglassService } from "@/services/SpyglassService.ts";
 import { SpyglassService as SpyglassServiceClass } from "@/services/SpyglassService.ts";
-import type { ExtensionMessage, FileFormat, PackStatus, RegistriesPayload, UserSettings, VersionConfig, WebviewMessage } from "@/types.ts";
 
 type PackState =
     | { status: "loading" }
@@ -48,23 +57,6 @@ interface AppState {
     settings: UserSettings;
     unsupportedFile: UnsupportedFile | null;
 }
-
-const DEFAULT_SETTINGS: UserSettings = {
-    uiScale: 1,
-    largeFileThreshold: 1000,
-    colors: {
-        primary: "#1b1b1b",
-        text: "#dadada",
-        add: "#487c13",
-        remove: "#9b341b",
-        selected: "#7f5505",
-        warning: "#cca700",
-        error: "#f48771",
-        predicate: "#306163",
-        function: "#5f5f5f",
-        pool: "#386330"
-    }
-};
 
 const initialState: AppState = {
     packState: { status: "loading" },

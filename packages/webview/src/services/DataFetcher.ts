@@ -1,37 +1,14 @@
-import type { VersionConfig } from "@/types.ts";
+import { MCMETA_URL, VANILLA_MCDOC_URL } from "@voxel/shared/constants";
+import type { BlockStateData, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared/types";
+import { parseRegistries } from "@voxel/shared/types";
 
-const MCMETA_URL = "https://raw.githubusercontent.com/misode/mcmeta";
-const VANILLA_MCDOC_URL = "https://raw.githubusercontent.com/SpyglassMC/vanilla-mcdoc";
 const CACHE_NAME = "minode-v1";
-
-export interface VanillaMcdocSymbols {
-    readonly ref: string;
-    readonly mcdoc: Record<string, unknown>;
-    readonly "mcdoc/dispatcher": Record<string, Record<string, unknown>>;
-}
-
-export interface VersionMeta {
-    readonly id: string;
-    readonly name: string;
-    readonly data_pack_version: number;
-    readonly resource_pack_version: number;
-}
-
-export type BlockStateData = [Record<string, string[]>, Record<string, string>];
 
 export async function fetchRegistries(version: VersionConfig): Promise<Map<string, string[]>> {
     const ref = version.dynamic ? "summary" : `${version.ref}-summary`;
     const url = `${MCMETA_URL}/${ref}/registries/data.min.json`;
     const data = await cachedFetch<Record<string, string[]>>(url);
-
-    const result = new Map<string, string[]>();
-    for (const [id, values] of Object.entries(data)) {
-        result.set(
-            id,
-            values.map((e) => `minecraft:${e}`)
-        );
-    }
-    return result;
+    return parseRegistries(data);
 }
 
 export async function fetchBlockStates(version: VersionConfig): Promise<Map<string, BlockStateData>> {

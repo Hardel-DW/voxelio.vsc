@@ -1,3 +1,14 @@
+import { DEFAULT_SETTINGS } from "@voxel/shared/constants";
+import type {
+    ExtensionMessage,
+    MutableRegistries,
+    PackStatus,
+    RegistriesPayload,
+    UserSettings,
+    VersionConfig,
+    WebviewMessage
+} from "@voxel/shared/types";
+import { getVersionFromPackFormat } from "@voxel/shared/versions";
 import type {
     ConfigurationChangeEvent,
     Disposable,
@@ -13,8 +24,7 @@ import type {
 import { commands, Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
-import { getVersionFromPackFormat } from "@/services/VersionMapper.ts";
-import type { ExtensionMessage, MutableRegistries, PackStatus, RegistriesPayload, UserSettings, WebviewMessage } from "@/types.ts";
+import type { PackDetectionResult } from "@/types.ts";
 
 export class NodeEditorProvider implements WebviewViewProvider {
     static readonly viewType = "minode.nodeEditor";
@@ -61,7 +71,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
         this.onActiveTabChanged();
     }
 
-    private toPackStatus(result: import("@/types.ts").PackDetectionResult, hasValidFile: boolean): PackStatus {
+    private toPackStatus(result: PackDetectionResult, hasValidFile: boolean): PackStatus {
         if (result.status === "notFound") {
             return hasValidFile ? { state: "noPackMeta" } : { state: "notFound" };
         }
@@ -78,7 +88,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
         return { state: "found", packFormat: result.pack.packFormat, version };
     }
 
-    private async loadRegistries(version: import("@/types.ts").VersionConfig): Promise<void> {
+    private async loadRegistries(version: VersionConfig): Promise<void> {
         try {
             const [vanillaRegistries, workspaceRegistries] = await Promise.all([
                 this.cacheService.getRegistries(version),
@@ -140,20 +150,21 @@ export class NodeEditorProvider implements WebviewViewProvider {
 
     private getSettings(): UserSettings {
         const config = workspace.getConfiguration("minode");
+        const defaults = DEFAULT_SETTINGS;
         return {
-            uiScale: config.get<number>("uiScale", 1),
-            largeFileThreshold: config.get<number>("largeFileThreshold", 1000),
+            uiScale: config.get<number>("uiScale", defaults.uiScale),
+            largeFileThreshold: config.get<number>("largeFileThreshold", defaults.largeFileThreshold),
             colors: {
-                primary: config.get<string>("colors.primary", "#1b1b1b"),
-                text: config.get<string>("colors.text", "#dadada"),
-                add: config.get<string>("colors.add", "#487c13"),
-                remove: config.get<string>("colors.remove", "#9b341b"),
-                selected: config.get<string>("colors.selected", "#7f5505"),
-                warning: config.get<string>("colors.warning", "#cca700"),
-                error: config.get<string>("colors.error", "#f48771"),
-                predicate: config.get<string>("colors.predicate", "#306163"),
-                function: config.get<string>("colors.function", "#5f5f5f"),
-                pool: config.get<string>("colors.pool", "#386330")
+                primary: config.get<string>("colors.primary", defaults.colors.primary),
+                text: config.get<string>("colors.text", defaults.colors.text),
+                add: config.get<string>("colors.add", defaults.colors.add),
+                remove: config.get<string>("colors.remove", defaults.colors.remove),
+                selected: config.get<string>("colors.selected", defaults.colors.selected),
+                warning: config.get<string>("colors.warning", defaults.colors.warning),
+                error: config.get<string>("colors.error", defaults.colors.error),
+                predicate: config.get<string>("colors.predicate", defaults.colors.predicate),
+                function: config.get<string>("colors.function", defaults.colors.function),
+                pool: config.get<string>("colors.pool", defaults.colors.pool)
             }
         };
     }

@@ -1,5 +1,6 @@
+import type { MutableRegistries, RegistriesPayload } from "@voxel/shared/types";
 import * as vscode from "vscode";
-import type { MutableRegistries, PackDetectionResult, PackInfo, RegistriesPayload } from "@/types.ts";
+import type { PackDetectionResult, PackInfo } from "@/types.ts";
 
 type PackVersion = number | [number] | [number, number];
 

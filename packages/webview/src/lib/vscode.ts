@@ -1,4 +1,4 @@
-import type { WebviewMessage } from "@/types.ts";
+import type { WebviewMessage } from "@voxel/shared/types";
 
 interface PersistedState {
     realUri?: string;

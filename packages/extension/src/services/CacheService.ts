@@ -1,16 +1,9 @@
 import { promises } from "node:fs";
 import { join } from "node:path";
+import { MCMETA_URL, VANILLA_MCDOC_URL } from "@voxel/shared/constants";
+import type { VanillaMcdocSymbols, VersionConfig } from "@voxel/shared/types";
+import { parseRegistries } from "@voxel/shared/types";
 import type { ExtensionContext } from "vscode";
-import type { VersionConfig } from "@/types.ts";
-
-const MCMETA_URL = "https://raw.githubusercontent.com/misode/mcmeta";
-const VANILLA_MCDOC_URL = "https://raw.githubusercontent.com/SpyglassMC/vanilla-mcdoc";
-
-export interface VanillaMcdocSymbols {
-    readonly ref: string;
-    readonly mcdoc: Record<string, unknown>;
-    readonly "mcdoc/dispatcher": Record<string, Record<string, unknown>>;
-}
 
 export class CacheService {
     private readonly cachePath: string;
@@ -28,14 +21,14 @@ export class CacheService {
         const cached = await this.readCache<Record<string, string[]>>(cacheFile);
 
         if (cached) {
-            return this.parseRegistries(cached);
+            return parseRegistries(cached);
         }
 
         const url = `${MCMETA_URL}/${version.ref}-summary/registries/data.min.json`;
         const data = await this.fetchJson<Record<string, string[]>>(url);
         await this.writeCache(cacheFile, data);
 
-        return this.parseRegistries(data);
+        return parseRegistries(data);
     }
 
     async getMcdocSymbols(): Promise<VanillaMcdocSymbols> {
@@ -74,19 +67,6 @@ export class CacheService {
         for (const file of files) {
             await promises.unlink(join(this.cachePath, file)).catch(() => {});
         }
-    }
-
-    private parseRegistries(data: Record<string, string[]>): Map<string, string[]> {
-        const result = new Map<string, string[]>();
-
-        for (const [id, values] of Object.entries(data)) {
-            result.set(
-                id,
-                values.map((e) => `minecraft:${e}`)
-            );
-        }
-
-        return result;
     }
 
     private async readCache<T>(filePath: string): Promise<T | null> {

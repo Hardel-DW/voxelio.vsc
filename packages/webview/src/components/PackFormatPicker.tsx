@@ -1,5 +1,5 @@
+import { getVersionsForPackType, type PackType } from "@voxel/shared/versions";
 import { useRef, useState } from "preact/hooks";
-import { type PackType, getVersionsForPackType } from "@/lib/versions.ts";
 
 export function PackFormatPicker(props: { onSelect: (packFormat: number) => void }) {
     const { onSelect } = props;
@@ -51,7 +51,7 @@ export function PackFormatPicker(props: { onSelect: (packFormat: number) => void
                 {versions.toReversed().map((v) => (
                     <li key={v.packFormat}>
                         <button type="button" class="pack-format-picker-item" onClick={() => handleSelect(v.packFormat)}>
-                            <span class="pack-format-picker-item-version">{v.versionId}</span>
+                            <span class="pack-format-picker-item-version">{v.version.id}</span>
                             <span class="pack-format-picker-item-format">Format {v.packFormat}</span>
                         </button>
                     </li>
@@ -67,11 +67,7 @@ export function PackFormatPicker(props: { onSelect: (packFormat: number) => void
                     onKeyDown={handleCustomFormatKeyDown}
                     inputMode="numeric"
                 />
-                <button
-                    type="button"
-                    class="pack-format-picker-custom-btn"
-                    onClick={handleCustomFormatSubmit}
-                    disabled={!customFormat}>
+                <button type="button" class="pack-format-picker-custom-btn" onClick={handleCustomFormatSubmit} disabled={!customFormat}>
                     Apply
                 </button>
             </div>

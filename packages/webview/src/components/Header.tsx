@@ -44,7 +44,7 @@ export function Header({ packFormat, versionId, fileContext, onPackFormatChange 
                         type="button"
                         class={`header-icon ${isReloading ? "rotating" : ""}`}
                         onClick={handleReload}
-                        title="Reload registries">
+                        title="Reload registries and custom mcdoc">
                         {Octicon.reload}
                     </button>
                 </div>

@@ -530,5 +530,7 @@ export function getResourceType(docAndNode: DocAndNode, ctx: McdocContext): stri
 export function getMcdocType(resourceType: string | undefined, ctx: McdocContext) {
     if (!resourceType) return undefined;
     const rootType = getRootType(resourceType);
-    return simplifyType(rootType, ctx);
+    const simplified = simplifyType(rootType, ctx);
+    if (simplified.kind === "any" || simplified.kind === "unsafe") return undefined;
+    return simplified;
 }

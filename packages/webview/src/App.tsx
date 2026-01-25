@@ -171,19 +171,18 @@ function handleInit(pack: PackStatus, settings: UserSettings): void {
 
 async function handleRegistries(payload: RegistriesMessage): Promise<void> {
     const { registries, spyglassConfig } = payload;
-    const { service, packState, virtualUri, realUri, mcdocFiles } = state;
-    setState({ registries, spyglassConfig });
-    const version = packState.status === "ready" ? packState.version : null;
-
-    if (!service || !version) {
+    const { service, packState, virtualUri, realUri } = state;
+    setState({ registries, spyglassConfig, mcdocFilesReceived: false });
+    if (!service) {
         tryCreateService();
         return;
     }
 
+    if (hasCustomResources(spyglassConfig)) return;
+    if (packState.status !== "ready") return;
     if (virtualUri) service.unwatchFile(virtualUri, onDocumentUpdated);
-    const customResources = spyglassConfig?.env?.customResources;
-    const newService = await SpyglassServiceClass.create(version, registries, customResources, mcdocFiles?.files);
 
+    const newService = await SpyglassServiceClass.create(packState.version, registries, undefined, undefined);
     setState({ service: newService, docAndNode: null });
     if (realUri) {
         postMessage({ type: "requestFile", uri: realUri });
@@ -290,11 +289,24 @@ function handleSettings(settings: UserSettings): void {
     setState({ settings });
 }
 
-function handleMcdocFiles(payload: McdocFilesPayload): void {
+async function handleMcdocFiles(payload: McdocFilesPayload): Promise<void> {
     setState({ mcdocFiles: payload, mcdocFilesReceived: true });
 
-    if (!state.service) {
+    const { service, packState, registries, spyglassConfig, virtualUri, realUri } = state;
+    if (!service) {
         tryCreateService();
+        return;
+    }
+
+    if (!hasCustomResources(spyglassConfig)) return;
+    if (packState.status !== "ready" || !registries) return;
+    if (virtualUri) service.unwatchFile(virtualUri, onDocumentUpdated);
+
+    const customResources = spyglassConfig?.env?.customResources;
+    const newService = await SpyglassServiceClass.create(packState.version, registries, customResources, payload.files);
+    setState({ service: newService, docAndNode: null });
+    if (realUri) {
+        postMessage({ type: "requestFile", uri: realUri });
     }
 }
 

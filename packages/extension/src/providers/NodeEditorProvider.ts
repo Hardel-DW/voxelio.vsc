@@ -28,7 +28,6 @@ import { PackDetector } from "@/services/PackDetector.ts";
 
 export class NodeEditorProvider implements WebviewViewProvider {
     static readonly viewType = "minode.nodeEditor";
-
     private view?: WebviewView;
     private readonly cacheService: CacheService;
     private readonly packDetector: PackDetector;
@@ -46,7 +45,6 @@ export class NodeEditorProvider implements WebviewViewProvider {
 
     resolveWebviewView(webviewView: WebviewView): void {
         this.view = webviewView;
-
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this.getWebviewDistUri()]

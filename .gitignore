@@ -48,3 +48,4 @@ bun.lockb
 dist/
 .claude/
 misode.github.io-master/
+readonly/

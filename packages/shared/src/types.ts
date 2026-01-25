@@ -59,12 +59,34 @@ export interface UnsupportedFilePayload {
     readonly reason: string;
 }
 
+export interface McdocFile {
+    readonly uri: string;
+    readonly content: string;
+}
+
+export interface McdocFilesPayload {
+    readonly files: readonly McdocFile[];
+}
+
+export interface CustomResourceConfig {
+    readonly category: string;
+    readonly pack?: "data" | "assets";
+}
+
+export interface SpyglassConfig {
+    readonly env?: {
+        readonly customResources?: Record<string, CustomResourceConfig>;
+    };
+}
+
 export type ExtensionMessage =
     | { readonly type: "init"; readonly payload: InitPayload }
     | { readonly type: "settings"; readonly payload: UserSettings }
     | { readonly type: "registries"; readonly payload: RegistriesPayload }
     | { readonly type: "file"; readonly payload: FilePayload }
-    | { readonly type: "unsupportedFile"; readonly payload: UnsupportedFilePayload };
+    | { readonly type: "unsupportedFile"; readonly payload: UnsupportedFilePayload }
+    | { readonly type: "mcdocFiles"; readonly payload: McdocFilesPayload }
+    | { readonly type: "spyglassConfig"; readonly payload: SpyglassConfig };
 
 export type WebviewMessage =
     | { readonly type: "ready" }

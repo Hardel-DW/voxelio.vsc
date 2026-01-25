@@ -90,14 +90,25 @@ export class NodeEditorProvider implements WebviewViewProvider {
 
     private async loadRegistries(version: VersionConfig): Promise<void> {
         try {
-            const [vanillaRegistries, workspaceRegistries] = await Promise.all([
+            const [vanillaRegistries, workspaceRegistries, mcdocFiles, spyglassConfig] = await Promise.all([
                 this.cacheService.getRegistries(version),
-                this.packDetector.scanWorkspaceRegistries(this.currentPackRoot)
+                this.packDetector.scanWorkspaceRegistries(this.currentPackRoot),
+                this.packDetector.scanMcdocFiles(this.currentPackRoot),
+                this.packDetector.scanSpyglassConfig(this.currentPackRoot)
             ]);
+
+            if (spyglassConfig) {
+                this.sendMessage({ type: "spyglassConfig", payload: spyglassConfig });
+            }
 
             const mergedRegistries = this.mergeRegistries(vanillaRegistries, workspaceRegistries);
             this.sendMessage({ type: "registries", payload: mergedRegistries });
-        } catch {
+
+            if (mcdocFiles.length > 0) {
+                this.sendMessage({ type: "mcdocFiles", payload: { files: mcdocFiles } });
+            }
+        } catch (e) {
+            console.error("[NodeEditorProvider] Failed to load registries:", e);
             window.showErrorMessage("Mi-Node: Failed to load registries");
         }
     }

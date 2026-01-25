@@ -4,8 +4,10 @@ import { DEFAULT_SETTINGS } from "@voxel/shared/constants";
 import type {
     ExtensionMessage,
     FileFormat,
+    McdocFilesPayload,
     PackStatus,
     RegistriesPayload,
+    SpyglassConfig,
     UserSettings,
     VersionConfig,
     WebviewMessage
@@ -47,6 +49,8 @@ interface UnsupportedFile {
 interface AppState {
     packState: PackState;
     registries: RegistriesPayload | null;
+    mcdocFiles: McdocFilesPayload | null;
+    spyglassConfig: SpyglassConfig | null;
     service: SpyglassService | null;
     docAndNode: DocAndNode | null;
     virtualUri: string | null;
@@ -61,6 +65,8 @@ interface AppState {
 const initialState: AppState = {
     packState: { status: "loading" },
     registries: null,
+    mcdocFiles: null,
+    spyglassConfig: null,
     service: null,
     docAndNode: null,
     virtualUri: null,
@@ -138,7 +144,7 @@ function handleInit(pack: PackStatus, settings: UserSettings): void {
 }
 
 async function handleRegistries(registries: RegistriesPayload): Promise<void> {
-    const { service, packState, virtualUri, realUri } = state;
+    const { service, packState, virtualUri, realUri, mcdocFiles, spyglassConfig } = state;
     setState({ registries });
     const version = packState.status === "ready" ? packState.version : null;
 
@@ -148,7 +154,12 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
     }
 
     if (virtualUri) service.unwatchFile(virtualUri, onDocumentUpdated);
-    const newService = await SpyglassServiceClass.create(version, registries);
+    const customResources = spyglassConfig?.env?.customResources;
+    const newService = await SpyglassServiceClass.create(version, registries, customResources);
+
+    if (mcdocFiles?.files.length) {
+        await newService.loadMcdocFiles(mcdocFiles.files);
+    }
 
     setState({ service: newService, docAndNode: null });
     if (realUri) {
@@ -158,11 +169,20 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
 
 async function tryCreateService(): Promise<void> {
     const { packState, registries, service, loading } = state;
-    if (packState.status !== "ready" || !registries || service || loading) return;
+    if (packState.status !== "ready" || !registries || service || loading) {
+        return;
+    }
 
     setState({ loading: true });
     try {
-        const newService = await SpyglassServiceClass.create(packState.version, registries);
+        const { spyglassConfig } = state;
+        const customResources = spyglassConfig?.env?.customResources;
+        const newService = await SpyglassServiceClass.create(packState.version, registries, customResources);
+        const { mcdocFiles } = state;
+        if (mcdocFiles?.files.length) {
+            await newService.loadMcdocFiles(mcdocFiles.files);
+        }
+
         setState({ service: newService, loading: false });
 
         const { pendingFile, virtualUri } = state;
@@ -238,6 +258,19 @@ function handleSettings(settings: UserSettings): void {
     setState({ settings });
 }
 
+async function handleMcdocFiles(payload: McdocFilesPayload): Promise<void> {
+    setState({ mcdocFiles: payload });
+
+    const { service } = state;
+    if (!service) return;
+
+    await service.loadMcdocFiles(payload.files);
+}
+
+function handleSpyglassConfig(config: SpyglassConfig): void {
+    setState({ spyglassConfig: config });
+}
+
 function handleMessage(event: MessageEvent<ExtensionMessage>): void {
     const msg = event.data;
     switch (msg.type) {
@@ -255,6 +288,12 @@ function handleMessage(event: MessageEvent<ExtensionMessage>): void {
             break;
         case "unsupportedFile":
             handleUnsupportedFile(msg.payload.uri, msg.payload.reason);
+            break;
+        case "mcdocFiles":
+            handleMcdocFiles(msg.payload);
+            break;
+        case "spyglassConfig":
+            handleSpyglassConfig(msg.payload);
             break;
     }
 }

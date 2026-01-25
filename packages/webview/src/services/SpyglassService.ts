@@ -13,7 +13,7 @@ import type {
 } from "@spyglassmc/core";
 import { CheckerContext, ConfigService, ErrorReporter, FormatterContext, ProfilerFactory, Service, VanillaConfig } from "@spyglassmc/core";
 import { BrowserExternals } from "@spyglassmc/core/lib/browser.js";
-import { uriBinder } from "@spyglassmc/java-edition/lib/binder/index.js";
+import { registerCustomResources, uriBinder } from "@spyglassmc/java-edition/lib/binder/index.js";
 import type { McmetaStates, McmetaSummary } from "@spyglassmc/java-edition/lib/dependency/index.js";
 import { Fluids, ReleaseVersion, symbolRegistrar } from "@spyglassmc/java-edition/lib/dependency/index.js";
 import { initialize } from "@spyglassmc/java-edition/lib/json/index.js";
@@ -21,7 +21,7 @@ import type { JsonNode } from "@spyglassmc/json";
 import { getInitializer } from "@spyglassmc/json";
 import { initialize as mcdocInitialize } from "@spyglassmc/mcdoc";
 import { attribute, registerAttribute } from "@spyglassmc/mcdoc/lib/runtime/index.js";
-import type { FileFormat, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared/types";
+import type { FileFormat, McdocFile, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared/types";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { fetchBlockStates, fetchRegistries, fetchVanillaMcdoc, fetchVersions } from "@/services/DataFetcher.ts";
 
@@ -185,6 +185,33 @@ export class SpyglassService {
         if (watchers) watchers.delete(handler);
     }
 
+    async loadMcdocFiles(files: readonly McdocFile[]): Promise<void> {
+        const virtualUris: string[] = [];
+
+        for (const file of files) {
+            const virtualUri = this.toVirtualMcdocUri(file.uri);
+            virtualUris.push(virtualUri);
+            await this.fs.writeFile(virtualUri, file.content);
+        }
+
+        for (const uri of virtualUris) {
+            this.service.project.emit("fileCreated", { uri });
+        }
+
+        await this.service.project.ready();
+    }
+
+    private toVirtualMcdocUri(realUri: string): string {
+        const mcdocMatch = realUri.match(/[/\\]mcdoc[/\\](.+\.mcdoc)$/i);
+        if (mcdocMatch) {
+            return `${ROOT_URI}mcdoc/${mcdocMatch[1].replace(/\\/g, "/")}`;
+        }
+
+        const pathMatch = realUri.match(/[/\\]([^/\\]+[/\\][^/\\]+\.mcdoc)$/i);
+        const relativePath = pathMatch?.[1]?.replace(/\\/g, "/") ?? "custom.mcdoc";
+        return `${ROOT_URI}mcdoc/${relativePath}`;
+    }
+
     private async notifyChange(doc: TextDocument): Promise<void> {
         const docAndNode = this.service.project.getClientManaged(doc.uri);
         if (docAndNode) {
@@ -195,7 +222,7 @@ export class SpyglassService {
         await this.service.project.ensureClientManagedChecked(doc.uri);
     }
 
-    static async create(version: VersionConfig, customRegistries?: Record<string, string[]>): Promise<SpyglassService> {
+    static async create(version: VersionConfig, customRegistries?: Record<string, string[]>, customResources?: Record<string, { category: string; pack?: string }>): Promise<SpyglassService> {
         const fs = new MemoryFileSystem();
         const externals: Externals = { ...BrowserExternals, fs };
 
@@ -212,7 +239,8 @@ export class SpyglassService {
                 defaultConfig: ConfigService.merge(VanillaConfig, {
                     env: {
                         gameVersion: version.ref as ReleaseVersion,
-                        dependencies: []
+                        dependencies: [],
+                        customResources: customResources ?? {}
                     }
                 }),
                 initializers: [mcdocInitialize, createInitializer(version, customRegistries)]
@@ -237,10 +265,7 @@ function createInitializer(version: VersionConfig, customRegistries?: Record<str
         const vanillaRegistries = await fetchRegistries(version);
         const blocks = await fetchBlockStates(version);
         const versions = await fetchVersions();
-
-        // Merge vanilla registries with custom (workspace) registries
         const mergedRegistries = mergeRegistries(vanillaRegistries, customRegistries);
-
         const summary: McmetaSummary = {
             registries: Object.fromEntries(mergedRegistries),
             blocks: Object.fromEntries(blocks) as McmetaStates,
@@ -257,6 +282,7 @@ function createInitializer(version: VersionConfig, customRegistries?: Record<str
 
         meta.registerUriBinder(uriBinder);
 
+        registerCustomResources(ctx.config);
         getInitializer()(ctx);
         initialize(ctx);
 
@@ -406,14 +432,14 @@ class MemoryFsWatcher implements FsWatcher {
         return this;
     }
 
-    async close(): Promise<void> {}
+    async close(): Promise<void> { }
 }
 
 class MemoryFileSystem implements ExternalFileSystem {
     private readonly files = new Map<string, Uint8Array<ArrayBuffer>>();
     private readonly dirs = new Set<string>();
 
-    async chmod(): Promise<void> {}
+    async chmod(): Promise<void> { }
 
     async mkdir(location: FsLocation): Promise<void> {
         this.dirs.add(String(location));
@@ -442,7 +468,7 @@ class MemoryFileSystem implements ExternalFileSystem {
         return content;
     }
 
-    async showFile(): Promise<void> {}
+    async showFile(): Promise<void> { }
 
     async stat(location: FsLocation): Promise<{ isFile(): boolean; isDirectory(): boolean }> {
         const uriStr = String(location);

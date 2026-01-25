@@ -1,6 +1,7 @@
-import type { MutableRegistries, RegistriesPayload } from "@voxel/shared/types";
+import type { McdocFile, MutableRegistries, PackDetectionResult, RegistriesPayload, SpyglassConfig } from "@voxel/shared/types";
 import { RelativePattern, Uri, workspace } from "vscode";
-import type { PackDetectionResult } from "@voxel/shared/types";
+
+const SPYGLASS_CONFIG_NAMES = ["spyglass.json", ".spyglassrc", ".spyglassrc.json"] as const;
 
 type PackVersion = number | [number] | [number, number];
 
@@ -59,6 +60,39 @@ export class PackDetector {
         }
 
         return { status: "found", pack: { uri: uriString, packFormat, description: content.pack.description } };
+    }
+
+    async scanMcdocFiles(packRoot?: Uri): Promise<McdocFile[]> {
+        const baseUri = packRoot ?? workspace.workspaceFolders?.[0]?.uri;
+        if (!baseUri) return [];
+
+        const pattern = new RelativePattern(Uri.joinPath(baseUri, "mcdoc"), "**/*.mcdoc");
+        const files = await workspace.findFiles(pattern);
+        const results: McdocFile[] = [];
+
+        for (const file of files) {
+            const content = await this.readTextFile(file);
+            if (content !== null) {
+                results.push({ uri: file.toString(), content });
+            }
+        }
+
+        return results;
+    }
+
+    async scanSpyglassConfig(packRoot?: Uri): Promise<SpyglassConfig | null> {
+        const baseUri = packRoot ?? workspace.workspaceFolders?.[0]?.uri;
+        if (!baseUri) return null;
+
+        for (const configName of SPYGLASS_CONFIG_NAMES) {
+            const configUri = Uri.joinPath(baseUri, configName);
+            const config = await this.readJson<SpyglassConfig>(configUri);
+            if (config !== null) {
+                return config;
+            }
+        }
+
+        return null;
     }
 
     async scanWorkspaceRegistries(packRoot?: Uri): Promise<RegistriesPayload> {
@@ -157,11 +191,20 @@ export class PackDetector {
     }
 
     private async readJson<T>(uri: Uri): Promise<T | null> {
-        const bytes = await workspace.fs.readFile(uri);
-        const text = new TextDecoder().decode(bytes);
+        const text = await this.readTextFile(uri);
+        if (text === null) return null;
 
         try {
             return JSON.parse(text) as T;
+        } catch {
+            return null;
+        }
+    }
+
+    private async readTextFile(uri: Uri): Promise<string | null> {
+        try {
+            const bytes = await workspace.fs.readFile(uri);
+            return new TextDecoder().decode(bytes);
         } catch {
             return null;
         }

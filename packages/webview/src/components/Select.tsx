@@ -1,5 +1,8 @@
 import type { JSX } from "preact";
 import { useRef, useState } from "preact/hooks";
+import { useClickOutside } from "@/lib/useClickOutside.ts";
+import { useDropdownPosition } from "@/lib/useDropdownPosition.ts";
+import { clsx } from "@/lib/utils.ts";
 
 export interface SelectOption {
     value: string;
@@ -16,24 +19,25 @@ interface SelectProps {
 export function Select({ value, options, onChange, placeholder = "Select..." }: SelectProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const containerRef = useRef<HTMLDivElement>(null);
+    const { containerRef, dropdownRef, position, updatePosition } = useDropdownPosition<HTMLDivElement, HTMLDivElement>();
+    useClickOutside(() => {
+        setIsOpen(false);
+        setSearch("");
+    }, containerRef);
     const searchRef = useRef<HTMLInputElement>(null);
-
     const selectedOption = options.find((opt) => opt.value === value);
     const displayText = selectedOption?.label ?? placeholder;
-
-    const filteredOptions = options.filter((opt) => {
-        if (!search) return true;
-        const searchLower = search.toLowerCase();
-        return opt.label.toLowerCase().includes(searchLower) || opt.value.toLowerCase().includes(searchLower);
-    });
+    const filteredOptions = search ? options.filter((opt) => opt.label.toLowerCase().includes(search.toLowerCase())) : options;
 
     const handleToggle = (): void => {
         const opening = !isOpen;
         setIsOpen(opening);
         if (opening) {
             setSearch("");
-            setTimeout(() => searchRef.current?.focus(), 0);
+            setTimeout(() => {
+                updatePosition();
+                searchRef.current?.focus();
+            }, 0);
         }
     };
 
@@ -43,32 +47,24 @@ export function Select({ value, options, onChange, placeholder = "Select..." }: 
         setSearch("");
     };
 
-    const handleBlur = (e: FocusEvent): void => {
-        if (!containerRef.current?.contains(e.relatedTarget as Node)) {
-            setIsOpen(false);
-            setSearch("");
-        }
-    };
-
     const handleKeyDown = (e: KeyboardEvent): void => {
         if (e.key === "Escape") {
             setIsOpen(false);
             setSearch("");
         } else if (e.key === "Enter" || e.key === " ") {
-            if (e.target === searchRef.current) return;
             e.preventDefault();
             handleToggle();
         }
     };
 
     return (
-        <div class="select" role="listbox" ref={containerRef} onBlur={handleBlur} onKeyDown={handleKeyDown}>
+        <div class="select" role="listbox" ref={containerRef} onKeyDown={handleKeyDown}>
             <button type="button" class="select-trigger" onClick={handleToggle}>
                 <span class="select-value">{displayText}</span>
                 <span class="select-arrow">{isOpen ? "\u25B2" : "\u25BC"}</span>
             </button>
             {isOpen && (
-                <div class="select-dropdown">
+                <div class={clsx("select-dropdown", position)} ref={dropdownRef}>
                     <input
                         ref={searchRef}
                         type="text"
@@ -76,7 +72,6 @@ export function Select({ value, options, onChange, placeholder = "Select..." }: 
                         placeholder="Search..."
                         value={search}
                         onInput={(e) => setSearch(e.currentTarget.value)}
-                        onMouseDown={(e) => e.stopPropagation()}
                     />
                     <ul class="select-options">
                         {placeholder && (

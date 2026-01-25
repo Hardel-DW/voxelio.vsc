@@ -1,5 +1,8 @@
 import type { JSX } from "preact";
-import { useRef, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
+import { useClickOutside } from "@/lib/useClickOutside.ts";
+import { useDropdownPosition } from "@/lib/useDropdownPosition.ts";
+import { clsx } from "@/lib/utils.ts";
 
 interface AutocompleteOption {
     value: string;
@@ -15,63 +18,31 @@ interface AutocompleteProps {
 
 export function Autocomplete({ value, options, onChange, placeholder }: AutocompleteProps): JSX.Element | null {
     const [isOpen, setIsOpen] = useState(false);
-    const [search, setSearch] = useState("");
-    const inputRef = useRef<HTMLInputElement>(null);
-    const searchRef = useRef<HTMLInputElement>(null);
-
-    const filteredOptions = options.filter((opt) => {
-        if (!search) return true;
-        const searchLower = search.toLowerCase();
-        return opt.value.toLowerCase().includes(searchLower) || (opt.label?.toLowerCase().includes(searchLower) ?? false);
-    });
-
-    const handleInputChange = (newValue: string): void => {
-        onChange(newValue);
-    };
+    const { containerRef, dropdownRef, position, updatePosition } = useDropdownPosition<HTMLDivElement, HTMLDivElement>();
+    useClickOutside(() => setIsOpen(false), containerRef);
+    const filteredOptions = value ? options.filter((opt) => (opt.label ?? opt.value).toLowerCase().includes(value.toLowerCase())) : options;
 
     const handleSelect = (optionValue: string): void => {
         onChange(optionValue);
-        setSearch("");
         setIsOpen(false);
-        inputRef.current?.blur();
     };
 
-    const handleFocus = (): void => {
+    const handleClick = (): void => {
         setIsOpen(true);
-        setSearch("");
-        setTimeout(() => searchRef.current?.focus(), 0);
-    };
-
-    const handleBlur = (e: FocusEvent): void => {
-        const container = inputRef.current?.parentElement;
-        if (!container?.contains(e.relatedTarget as Node)) {
-            setIsOpen(false);
-            setSearch("");
-        }
+        setTimeout(updatePosition, 0);
     };
 
     return (
-        <div class="autocomplete">
+        <div class="autocomplete" ref={containerRef}>
             <input
-                ref={inputRef}
                 type="text"
                 value={value}
-                onInput={(e) => handleInputChange(e.currentTarget.value)}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
+                onInput={(e) => onChange(e.currentTarget.value)}
+                onClick={handleClick}
                 placeholder={placeholder}
             />
             {isOpen && filteredOptions.length > 0 && (
-                <div class="autocomplete-dropdown">
-                    <input
-                        ref={searchRef}
-                        type="text"
-                        class="autocomplete-search"
-                        placeholder="Search..."
-                        value={search}
-                        onInput={(e) => setSearch(e.currentTarget.value)}
-                        onMouseDown={(e) => e.stopPropagation()}
-                    />
+                <div class={clsx("autocomplete-dropdown", position)} ref={dropdownRef}>
                     <ul class="autocomplete-options">
                         {filteredOptions.map((opt) => (
                             <li key={opt.value} class={opt.value === value ? "selected" : ""} onMouseDown={() => handleSelect(opt.value)}>

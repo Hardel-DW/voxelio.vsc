@@ -194,7 +194,6 @@ button.toggle {
 
 .autocomplete-dropdown {
     position: absolute;
-    top: 100%;
     left: -50px;
     min-width: 250px;
     width: max-content;
@@ -206,6 +205,16 @@ button.toggle {
     border-radius: var(--size-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     z-index: 100;
+}
+
+.autocomplete-dropdown.bottom {
+    top: 100%;
+    margin-top: 2px;
+}
+
+.autocomplete-dropdown.top {
+    bottom: 100%;
+    margin-bottom: 2px;
 }
 
 .autocomplete-search {
@@ -1028,17 +1037,25 @@ button.move:disabled svg {
 
 .select-dropdown {
     position: absolute;
-    top: 100%;
     left: 0;
     z-index: 100;
     min-width: 250px;
     max-width: 400px;
     margin: 0;
-    margin-top: 2px;
     background-color: var(--node-background-label);
     border: 1px solid var(--node-border);
     border-radius: var(--size-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.select-dropdown.bottom {
+    top: 100%;
+    margin-top: 2px;
+}
+
+.select-dropdown.top {
+    bottom: 100%;
+    margin-bottom: 2px;
 }
 
 .select-search {

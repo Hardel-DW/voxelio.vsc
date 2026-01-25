@@ -1,11 +1,9 @@
 import type {
     AstNode,
+    DecompressedFile,
     DocAndNode,
-    ExternalFileSystem,
     Externals,
     FileNode,
-    FsLocation,
-    FsWatcher,
     LanguageError,
     MetaRegistry,
     ProjectInitializer,
@@ -22,8 +20,10 @@ import { getInitializer } from "@spyglassmc/json";
 import { initialize as mcdocInitialize } from "@spyglassmc/mcdoc";
 import { attribute, registerAttribute } from "@spyglassmc/mcdoc/lib/runtime/index.js";
 import type { FileFormat, McdocFile, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared/types";
+import { extractZip, makeZip } from "@voxelio/zip";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { fetchBlockStates, fetchRegistries, fetchVanillaMcdoc, fetchVersions } from "@/services/DataFetcher.ts";
+import { MemoryFileSystem } from "./MemoryFileSystem.ts";
 
 const VANILLA_MCDOC_URI = "mcdoc://vanilla-mcdoc/symbols.json";
 const CACHE_URI = "file:///cache/";
@@ -185,33 +185,6 @@ export class SpyglassService {
         if (watchers) watchers.delete(handler);
     }
 
-    async loadMcdocFiles(files: readonly McdocFile[]): Promise<void> {
-        const virtualUris: string[] = [];
-
-        for (const file of files) {
-            const virtualUri = this.toVirtualMcdocUri(file.uri);
-            virtualUris.push(virtualUri);
-            await this.fs.writeFile(virtualUri, file.content);
-        }
-
-        for (const uri of virtualUris) {
-            this.service.project.emit("fileCreated", { uri });
-        }
-
-        await this.service.project.ready();
-    }
-
-    private toVirtualMcdocUri(realUri: string): string {
-        const mcdocMatch = realUri.match(/[/\\]mcdoc[/\\](.+\.mcdoc)$/i);
-        if (mcdocMatch) {
-            return `${ROOT_URI}mcdoc/${mcdocMatch[1].replace(/\\/g, "/")}`;
-        }
-
-        const pathMatch = realUri.match(/[/\\]([^/\\]+[/\\][^/\\]+\.mcdoc)$/i);
-        const relativePath = pathMatch?.[1]?.replace(/\\/g, "/") ?? "custom.mcdoc";
-        return `${ROOT_URI}mcdoc/${relativePath}`;
-    }
-
     private async notifyChange(doc: TextDocument): Promise<void> {
         const docAndNode = this.service.project.getClientManaged(doc.uri);
         if (docAndNode) {
@@ -222,12 +195,26 @@ export class SpyglassService {
         await this.service.project.ensureClientManagedChecked(doc.uri);
     }
 
-    static async create(version: VersionConfig, customRegistries?: Record<string, string[]>, customResources?: Record<string, { category: string; pack?: string }>): Promise<SpyglassService> {
+    static async create(
+        version: VersionConfig,
+        customRegistries?: Record<string, string[]>,
+        customResources?: Record<string, { category: string; pack?: string }>,
+        mcdocFiles?: readonly McdocFile[]
+    ): Promise<SpyglassService> {
         const fs = new MemoryFileSystem();
-        const externals: Externals = { ...BrowserExternals, fs };
+        const externals: Externals = {
+            ...BrowserExternals,
+            fs,
+            archive: {
+                ...BrowserExternals.archive,
+                decompressBall
+            }
+        };
 
         await fs.mkdir(CACHE_URI);
         await fs.mkdir(ROOT_URI);
+        const hasCustomMcdoc = mcdocFiles && mcdocFiles.length > 0;
+        const dependencies = hasCustomMcdoc ? ["@custom-mcdoc"] : [];
 
         const service = new Service({
             logger: console,
@@ -239,11 +226,11 @@ export class SpyglassService {
                 defaultConfig: ConfigService.merge(VanillaConfig, {
                     env: {
                         gameVersion: version.ref as ReleaseVersion,
-                        dependencies: [],
+                        dependencies,
                         customResources: customResources ?? {}
                     }
                 }),
-                initializers: [mcdocInitialize, createInitializer(version, customRegistries)]
+                initializers: [mcdocInitialize, createInitializer(version, customRegistries, mcdocFiles, fs)]
             }
         });
 
@@ -252,15 +239,29 @@ export class SpyglassService {
     }
 }
 
-function createInitializer(version: VersionConfig, customRegistries?: Record<string, string[]>): ProjectInitializer {
+function createInitializer(
+    version: VersionConfig,
+    customRegistries?: Record<string, string[]>,
+    mcdocFiles?: readonly McdocFile[],
+    fs?: MemoryFileSystem
+): ProjectInitializer {
     return async (ctx) => {
-        const { meta } = ctx;
+        const { meta, cacheRoot } = ctx;
 
         const vanillaMcdoc = await fetchVanillaMcdoc();
         meta.registerSymbolRegistrar("vanilla-mcdoc", {
             checksum: vanillaMcdoc.ref,
             registrar: createMcdocRegistrar(vanillaMcdoc)
         });
+
+        if (mcdocFiles && mcdocFiles.length > 0 && fs) {
+            meta.registerDependencyProvider("@custom-mcdoc", async () => {
+                const uri = `${cacheRoot}downloads/custom-mcdoc.tar.gz`;
+                const buffer = await compressMcdocFiles(mcdocFiles);
+                await fs.writeFile(uri, buffer);
+                return { type: "tarball-file", uri };
+            });
+        }
 
         const vanillaRegistries = await fetchRegistries(version);
         const blocks = await fetchBlockStates(version);
@@ -288,6 +289,48 @@ function createInitializer(version: VersionConfig, customRegistries?: Record<str
 
         return { loadedVersion: version.ref };
     };
+}
+
+async function decompressBall(buffer: Uint8Array<ArrayBuffer>, options?: { stripLevel?: number }): Promise<DecompressedFile[]> {
+    const extracted = await extractZip(buffer);
+    return Object.entries(extracted).map(([filename, data]) => {
+        const path = options?.stripLevel === 1 ? filename.substring(filename.indexOf("/") + 1) : filename;
+        return {
+            data: data as Uint8Array<ArrayBuffer>,
+            path,
+            mtime: "",
+            type: "file" as const,
+            mode: 0
+        };
+    });
+}
+
+async function compressMcdocFiles(files: readonly McdocFile[]): Promise<Uint8Array<ArrayBuffer>> {
+    const zipInputs = files.map((file) => {
+        const match = file.uri.match(/[/\\]([^/\\]+\.mcdoc)$/i);
+        const filename = match?.[1] ?? "custom.mcdoc";
+        return { input: new TextEncoder().encode(file.content), name: filename };
+    });
+
+    const response = makeZip(zipInputs);
+    const reader = response.getReader();
+    const chunks: Uint8Array[] = [];
+
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) chunks.push(value);
+    }
+
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+    }
+
+    return result as Uint8Array<ArrayBuffer>;
 }
 
 function mergeRegistries(vanilla: Map<string, string[]>, custom?: Record<string, string[]>): Map<string, string[]> {
@@ -336,13 +379,6 @@ function createMcdocRegistrar(symbols: VanillaMcdocSymbols): SymbolRegistrar {
     };
 }
 
-interface DirEntry {
-    name: string;
-    isFile(): boolean;
-    isDirectory(): boolean;
-    isSymbolicLink(): boolean;
-}
-
 function registerAttributes(meta: MetaRegistry, release: ReleaseVersion, versions: VersionMeta[]): void {
     registerAttribute(meta, "since", attribute.validator.string, {
         filterElement: (config) => {
@@ -383,112 +419,4 @@ function registerAttributes(meta: MetaRegistry, release: ReleaseVersion, version
             };
         }
     });
-}
-
-type WatcherListener = (...args: never[]) => unknown;
-
-class MemoryFsWatcher implements FsWatcher {
-    readonly #listeners = new Map<string, { all: Set<WatcherListener>; once: Set<WatcherListener> }>();
-
-    emit(eventName: string, ...args: unknown[]): boolean {
-        const listeners = this.#listeners.get(eventName);
-        if (!listeners?.all?.size) return false;
-
-        for (const listener of listeners.all) {
-            (listener as (...a: unknown[]) => unknown)(...args);
-            if (listeners.once.has(listener)) {
-                listeners.all.delete(listener);
-                listeners.once.delete(listener);
-            }
-        }
-        return true;
-    }
-
-    on(eventName: "ready", listener: () => unknown): this;
-    on(eventName: "add", listener: (uri: string) => unknown): this;
-    on(eventName: "change", listener: (uri: string) => unknown): this;
-    on(eventName: "unlink", listener: (uri: string) => unknown): this;
-    on(eventName: "error", listener: (error: Error) => unknown): this;
-    on(eventName: string, listener: WatcherListener): this {
-        if (!this.#listeners.has(eventName)) {
-            this.#listeners.set(eventName, { all: new Set(), once: new Set() });
-        }
-        this.#listeners.get(eventName)?.all.add(listener);
-        return this;
-    }
-
-    once(eventName: "ready", listener: () => unknown): this;
-    once(eventName: "add", listener: (uri: string) => unknown): this;
-    once(eventName: "change", listener: (uri: string) => unknown): this;
-    once(eventName: "unlink", listener: (uri: string) => unknown): this;
-    once(eventName: "error", listener: (error: Error) => unknown): this;
-    once(eventName: string, listener: WatcherListener): this {
-        if (!this.#listeners.has(eventName)) {
-            this.#listeners.set(eventName, { all: new Set(), once: new Set() });
-        }
-        const listeners = this.#listeners.get(eventName);
-        listeners?.all.add(listener);
-        listeners?.once.add(listener);
-        return this;
-    }
-
-    async close(): Promise<void> { }
-}
-
-class MemoryFileSystem implements ExternalFileSystem {
-    private readonly files = new Map<string, Uint8Array<ArrayBuffer>>();
-    private readonly dirs = new Set<string>();
-
-    async chmod(): Promise<void> { }
-
-    async mkdir(location: FsLocation): Promise<void> {
-        this.dirs.add(String(location));
-    }
-
-    async readdir(location: FsLocation): Promise<DirEntry[]> {
-        const uriStr = String(location);
-        const prefix = uriStr.endsWith("/") ? uriStr : `${uriStr}/`;
-        const entries: DirEntry[] = [];
-
-        for (const path of this.files.keys()) {
-            if (path.startsWith(prefix)) {
-                const remaining = path.slice(prefix.length);
-                const name = remaining.split("/")[0];
-                if (name && !entries.some((e) => e.name === name)) {
-                    entries.push({ name, isFile: () => true, isDirectory: () => false, isSymbolicLink: () => false });
-                }
-            }
-        }
-        return entries;
-    }
-
-    async readFile(location: FsLocation): Promise<Uint8Array<ArrayBuffer>> {
-        const content = this.files.get(String(location));
-        if (!content) throw new Error(`File not found: ${location}`);
-        return content;
-    }
-
-    async showFile(): Promise<void> { }
-
-    async stat(location: FsLocation): Promise<{ isFile(): boolean; isDirectory(): boolean }> {
-        const uriStr = String(location);
-        if (this.files.has(uriStr)) return { isFile: () => true, isDirectory: () => false };
-        if (this.dirs.has(uriStr)) return { isFile: () => false, isDirectory: () => true };
-        throw new Error(`Not found: ${location}`);
-    }
-
-    async unlink(location: FsLocation): Promise<void> {
-        this.files.delete(String(location));
-    }
-
-    watch(): FsWatcher {
-        const watcher = new MemoryFsWatcher();
-        queueMicrotask(() => watcher.emit("ready"));
-        return watcher;
-    }
-
-    async writeFile(location: FsLocation, data: string | Uint8Array<ArrayBuffer>): Promise<void> {
-        const content = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
-        this.files.set(String(location), content);
-    }
 }

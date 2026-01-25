@@ -79,14 +79,18 @@ export interface SpyglassConfig {
     };
 }
 
+export interface RegistriesMessage {
+    readonly registries: RegistriesPayload;
+    readonly spyglassConfig: SpyglassConfig | null;
+}
+
 export type ExtensionMessage =
     | { readonly type: "init"; readonly payload: InitPayload }
     | { readonly type: "settings"; readonly payload: UserSettings }
-    | { readonly type: "registries"; readonly payload: RegistriesPayload }
+    | { readonly type: "registries"; readonly payload: RegistriesMessage }
     | { readonly type: "file"; readonly payload: FilePayload }
     | { readonly type: "unsupportedFile"; readonly payload: UnsupportedFilePayload }
-    | { readonly type: "mcdocFiles"; readonly payload: McdocFilesPayload }
-    | { readonly type: "spyglassConfig"; readonly payload: SpyglassConfig };
+    | { readonly type: "mcdocFiles"; readonly payload: McdocFilesPayload };
 
 export type WebviewMessage =
     | { readonly type: "ready" }

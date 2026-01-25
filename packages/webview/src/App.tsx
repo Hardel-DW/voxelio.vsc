@@ -6,6 +6,7 @@ import type {
     FileFormat,
     McdocFilesPayload,
     PackStatus,
+    RegistriesMessage,
     RegistriesPayload,
     SpyglassConfig,
     UserSettings,
@@ -50,6 +51,7 @@ interface AppState {
     packState: PackState;
     registries: RegistriesPayload | null;
     mcdocFiles: McdocFilesPayload | null;
+    mcdocFilesReceived: boolean;
     spyglassConfig: SpyglassConfig | null;
     service: SpyglassService | null;
     docAndNode: DocAndNode | null;
@@ -66,6 +68,7 @@ const initialState: AppState = {
     packState: { status: "loading" },
     registries: null,
     mcdocFiles: null,
+    mcdocFilesReceived: false,
     spyglassConfig: null,
     service: null,
     docAndNode: null,
@@ -113,7 +116,14 @@ function handleInit(pack: PackStatus, settings: UserSettings): void {
     setState({ settings });
 
     if (pack.state === "notFound") {
-        setState({ packState: { status: "notFound" }, error: null, service: null, registries: null });
+        setState({
+            packState: { status: "notFound" },
+            error: null,
+            service: null,
+            registries: null,
+            mcdocFiles: null,
+            mcdocFilesReceived: false
+        });
         return;
     }
 
@@ -125,11 +135,25 @@ function handleInit(pack: PackStatus, settings: UserSettings): void {
         }
 
         if (pack.state === "noPackMeta") {
-            setState({ packState: { status: "noPackMeta" }, error: null, service: null, registries: null });
+            setState({
+                packState: { status: "noPackMeta" },
+                error: null,
+                service: null,
+                registries: null,
+                mcdocFiles: null,
+                mcdocFilesReceived: false
+            });
             return;
         }
 
-        setState({ packState: { status: "invalid", reason: pack.reason }, error: null, service: null, registries: null });
+        setState({
+            packState: { status: "invalid", reason: pack.reason },
+            error: null,
+            service: null,
+            registries: null,
+            mcdocFiles: null,
+            mcdocFilesReceived: false
+        });
         return;
     }
 
@@ -138,14 +162,17 @@ function handleInit(pack: PackStatus, settings: UserSettings): void {
         packState: { status: "ready", packFormat: pack.packFormat, version: pack.version },
         error: null,
         service: null,
-        registries: null
+        registries: null,
+        mcdocFiles: null,
+        mcdocFilesReceived: false
     });
     tryCreateService();
 }
 
-async function handleRegistries(registries: RegistriesPayload): Promise<void> {
-    const { service, packState, virtualUri, realUri, mcdocFiles, spyglassConfig } = state;
-    setState({ registries });
+async function handleRegistries(payload: RegistriesMessage): Promise<void> {
+    const { registries, spyglassConfig } = payload;
+    const { service, packState, virtualUri, realUri, mcdocFiles } = state;
+    setState({ registries, spyglassConfig });
     const version = packState.status === "ready" ? packState.version : null;
 
     if (!service || !version) {
@@ -155,11 +182,7 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
 
     if (virtualUri) service.unwatchFile(virtualUri, onDocumentUpdated);
     const customResources = spyglassConfig?.env?.customResources;
-    const newService = await SpyglassServiceClass.create(version, registries, customResources);
-
-    if (mcdocFiles?.files.length) {
-        await newService.loadMcdocFiles(mcdocFiles.files);
-    }
+    const newService = await SpyglassServiceClass.create(version, registries, customResources, mcdocFiles?.files);
 
     setState({ service: newService, docAndNode: null });
     if (realUri) {
@@ -167,21 +190,30 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
     }
 }
 
+function hasCustomResources(config: SpyglassConfig | null): boolean {
+    const customResources = config?.env?.customResources;
+    return customResources !== undefined && Object.keys(customResources).length > 0;
+}
+
 async function tryCreateService(): Promise<void> {
-    const { packState, registries, service, loading } = state;
+    const { packState, registries, service, loading, spyglassConfig, mcdocFilesReceived } = state;
+
     if (packState.status !== "ready" || !registries || service || loading) {
+        return;
+    }
+
+    // If there are custom resources, wait for mcdocFiles message
+    // Otherwise dispatcher symbols won't be available and types resolve to 'any'
+    if (hasCustomResources(spyglassConfig) && !mcdocFilesReceived) {
         return;
     }
 
     setState({ loading: true });
     try {
-        const { spyglassConfig } = state;
-        const customResources = spyglassConfig?.env?.customResources;
-        const newService = await SpyglassServiceClass.create(packState.version, registries, customResources);
         const { mcdocFiles } = state;
-        if (mcdocFiles?.files.length) {
-            await newService.loadMcdocFiles(mcdocFiles.files);
-        }
+        const customResources = spyglassConfig?.env?.customResources;
+
+        const newService = await SpyglassServiceClass.create(packState.version, registries, customResources, mcdocFiles?.files);
 
         setState({ service: newService, loading: false });
 
@@ -258,17 +290,12 @@ function handleSettings(settings: UserSettings): void {
     setState({ settings });
 }
 
-async function handleMcdocFiles(payload: McdocFilesPayload): Promise<void> {
-    setState({ mcdocFiles: payload });
+function handleMcdocFiles(payload: McdocFilesPayload): void {
+    setState({ mcdocFiles: payload, mcdocFilesReceived: true });
 
-    const { service } = state;
-    if (!service) return;
-
-    await service.loadMcdocFiles(payload.files);
-}
-
-function handleSpyglassConfig(config: SpyglassConfig): void {
-    setState({ spyglassConfig: config });
+    if (!state.service) {
+        tryCreateService();
+    }
 }
 
 function handleMessage(event: MessageEvent<ExtensionMessage>): void {
@@ -291,9 +318,6 @@ function handleMessage(event: MessageEvent<ExtensionMessage>): void {
             break;
         case "mcdocFiles":
             handleMcdocFiles(msg.payload);
-            break;
-        case "spyglassConfig":
-            handleSpyglassConfig(msg.payload);
             break;
     }
 }

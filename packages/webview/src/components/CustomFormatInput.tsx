@@ -7,7 +7,12 @@ interface CustomFormatInputProps {
     className?: string;
 }
 
-export function CustomFormatInput({ onSubmit, placeholder = "Custom format", buttonText = "Apply", className = "" }: CustomFormatInputProps) {
+export function CustomFormatInput({
+    onSubmit,
+    placeholder = "Custom format",
+    buttonText = "Apply",
+    className = ""
+}: CustomFormatInputProps) {
     const [value, setValue] = useState("");
 
     const handleChange = (e: Event): void => {

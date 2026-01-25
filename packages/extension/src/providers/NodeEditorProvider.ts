@@ -2,6 +2,7 @@ import { DEFAULT_SETTINGS } from "@voxel/shared/constants";
 import type {
     ExtensionMessage,
     MutableRegistries,
+    PackDetectionResult,
     PackStatus,
     RegistriesPayload,
     UserSettings,
@@ -24,7 +25,6 @@ import type {
 import { commands, Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
-import type { PackDetectionResult } from "@voxel/shared/types";
 
 export class NodeEditorProvider implements WebviewViewProvider {
     static readonly viewType = "minode.nodeEditor";
@@ -97,16 +97,9 @@ export class NodeEditorProvider implements WebviewViewProvider {
                 this.packDetector.scanSpyglassConfig(this.currentPackRoot)
             ]);
 
-            if (spyglassConfig) {
-                this.sendMessage({ type: "spyglassConfig", payload: spyglassConfig });
-            }
-
             const mergedRegistries = this.mergeRegistries(vanillaRegistries, workspaceRegistries);
-            this.sendMessage({ type: "registries", payload: mergedRegistries });
-
-            if (mcdocFiles.length > 0) {
-                this.sendMessage({ type: "mcdocFiles", payload: { files: mcdocFiles } });
-            }
+            this.sendMessage({ type: "registries", payload: { registries: mergedRegistries, spyglassConfig } });
+            this.sendMessage({ type: "mcdocFiles", payload: { files: mcdocFiles } });
         } catch (e) {
             console.error("[NodeEditorProvider] Failed to load registries:", e);
             window.showErrorMessage("Mi-Node: Failed to load registries");

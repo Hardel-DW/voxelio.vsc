@@ -524,8 +524,7 @@ export function getResourceType(docAndNode: DocAndNode, ctx: McdocContext): stri
     if (docAndNode.doc.uri.endsWith("/pack.mcmeta")) {
         return "pack_mcmeta";
     }
-    const res = dissectUri(docAndNode.doc.uri, ctx);
-    return res?.category;
+    return dissectUri(docAndNode.doc.uri, ctx)?.category;
 }
 
 export function getMcdocType(resourceType: string | undefined, ctx: McdocContext) {

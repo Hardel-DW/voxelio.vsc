@@ -125,11 +125,13 @@ function handleInit(pack: PackStatus, settings: UserSettings): void {
             postMessage({ type: "changePackFormat", packFormat: savedFormat });
             return;
         }
+
         if (pack.state === "noPackMeta") {
             setState({ packState: { status: "noPackMeta" }, error: null, service: null, registries: null });
-        } else {
-            setState({ packState: { status: "invalid", reason: pack.reason }, error: null, service: null, registries: null });
+            return;
         }
+
+        setState({ packState: { status: "invalid", reason: pack.reason }, error: null, service: null, registries: null });
         return;
     }
 
@@ -144,9 +146,8 @@ function handleInit(pack: PackStatus, settings: UserSettings): void {
 }
 
 async function handleRegistries(registries: RegistriesPayload): Promise<void> {
-    const { service, packState, virtualUri } = state;
+    const { service, packState, virtualUri, realUri } = state;
     setState({ registries });
-
     const version = packState.status === "ready" ? packState.version : null;
 
     if (!service || !version) {
@@ -154,23 +155,13 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
         return;
     }
 
-    const currentContent = virtualUri ? await service.readFile(virtualUri) : undefined;
+    if (virtualUri) service.unwatchFile(virtualUri, onDocumentUpdated);
     const newService = await SpyglassServiceClass.create(version, registries);
 
-    if (!currentContent || !virtualUri) {
-        setState({ service: newService });
-        return;
+    setState({ service: newService, docAndNode: null });
+    if (realUri) {
+        postMessage({ type: "requestFile", uri: realUri });
     }
-
-    await newService.writeFile(virtualUri, currentContent);
-    const docAndNode = await newService.openFile(virtualUri);
-    if (!docAndNode) {
-        setState({ service: newService });
-        return;
-    }
-
-    setState({ service: newService, docAndNode });
-    newService.watchFile(virtualUri, onDocumentUpdated);
 }
 
 async function tryCreateService(): Promise<void> {
@@ -373,28 +364,11 @@ export function App(): JSX.Element | null {
         );
     }
 
-    if (loading) {
+    if (loading || !registries || !service) {
+        const title = loading ? "Loading Spyglass..." : !registries ? "Loading registries..." : "Initializing Spyglass...";
         return (
             <div class="editor-layout">
-                <EmptyState icon={Octicon.loader} title="Loading Spyglass..." />
-                <Footer />
-            </div>
-        );
-    }
-
-    if (!registries) {
-        return (
-            <div class="editor-layout">
-                <EmptyState icon={Octicon.loader} title="Loading registries..." />
-                <Footer />
-            </div>
-        );
-    }
-
-    if (!service) {
-        return (
-            <div class="editor-layout">
-                <EmptyState icon={Octicon.loader} title="Initializing Spyglass..." />
+                <EmptyState icon={Octicon.loader} title={title} />
                 <Footer />
             </div>
         );

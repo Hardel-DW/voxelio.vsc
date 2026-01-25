@@ -36,9 +36,6 @@ export function saveFile(uri: string, content: string): void {
     postMessage({ type: "saveFile", uri, content });
 }
 
-export const MIN_SCALE = 1;
-export const MAX_SCALE = 20;
-
 export function getManualPackFormat(): number | undefined {
     return getPersistedState()?.manualPackFormat;
 }

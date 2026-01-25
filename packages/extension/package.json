@@ -3,7 +3,7 @@
     "displayName": "Datapack Node Editor - Mi-node",
     "description": "Integration of the Misode editor into VSC, with Spyglass tools.",
     "icon": "resources/icon.png",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "publisher": "voxel",
     "repository": {
         "type": "git",

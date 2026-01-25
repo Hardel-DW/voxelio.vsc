@@ -94,6 +94,9 @@ export class SpyglassService {
         const document = this.documents.get(uri);
         if (document) {
             TextDocument.update(document.doc, [{ text: content }], document.doc.version + 1);
+            if (format) {
+                document.format = format;
+            }
         } else if (format) {
             const doc = TextDocument.create(uri, "json", 1, content);
             this.documents.set(uri, { doc, format, undoStack: [], redoStack: [] });
@@ -135,7 +138,8 @@ export class SpyglassService {
 
     formatNode(node: JsonNode, uri: string): string {
         const document = this.documents.get(uri);
-        const { tabSize, insertSpaces } = document?.format ?? { tabSize: 2, insertSpaces: true };
+        if (!document) throw new Error(`Document not found: ${uri}`);
+        const { tabSize, insertSpaces } = document.format;
 
         const formatter = this.service.project.meta.getFormatter(node.type);
         const doc = TextDocument.create(uri, "json", 1, "");

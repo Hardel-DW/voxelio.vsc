@@ -228,7 +228,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
         this.currentFileUri = fileUri.toString();
 
         await this.detectAndSwitchPack(fileUri);
-        this.sendFileContent(editor.document);
+        this.sendFileContent(editor);
     }
 
     private async detectAndSwitchPack(fileUri: Uri): Promise<void> {
@@ -269,24 +269,27 @@ export class NodeEditorProvider implements WebviewViewProvider {
         if (uri !== this.currentFileUri) return;
         if (!this.isEditableFile(event.document)) return;
 
-        this.sendFileContent(event.document);
+        const editor = window.visibleTextEditors.find((e) => e.document.uri.toString() === uri);
+        if (!editor) return;
+        this.sendFileContent(editor);
     }
 
     private isEditableFile(document: TextDocument): boolean {
         const path = document.uri.fsPath;
 
-        // pack.mcmeta peut avoir languageId "json" ou autre selon la config VS Code
         if (path.endsWith("pack.mcmeta")) return true;
 
         if (document.languageId !== "json") return false;
         return (path.includes("data") || path.includes("assets")) && path.endsWith(".json");
     }
 
-    private sendFileContent(document: TextDocument): void {
-        const options = window.activeTextEditor?.options;
+    private sendFileContent(editor: TextEditor): void {
+        const { document, options } = editor;
         const eol = document.eol === 1 ? "\n" : "\r\n";
-        const tabSize = typeof options?.tabSize === "number" ? options.tabSize : 2;
-        const insertSpaces = typeof options?.insertSpaces === "boolean" ? options.insertSpaces : true;
+        const editorConfig = workspace.getConfiguration("editor", document.uri);
+        const tabSize = typeof options.tabSize === "number" ? options.tabSize : editorConfig.get<number>("tabSize", 4);
+        const insertSpaces =
+            typeof options.insertSpaces === "boolean" ? options.insertSpaces : editorConfig.get<boolean>("insertSpaces", true);
 
         this.sendMessage({
             type: "file",
@@ -327,15 +330,25 @@ export class NodeEditorProvider implements WebviewViewProvider {
     private async handleRequestFile(uriString: string): Promise<void> {
         try {
             const uri = Uri.parse(uriString);
+            const editor = window.visibleTextEditors.find((e) => e.document.uri.toString() === uriString);
+            if (editor) {
+                this.sendFileContent(editor);
+                return;
+            }
+
             const content = await workspace.fs.readFile(uri);
             const text = new TextDecoder().decode(content);
             const eol = text.includes("\r\n") ? "\r\n" : "\n";
+            const editorConfig = workspace.getConfiguration("editor", uri);
+            const tabSize = editorConfig.get<number>("tabSize", 4);
+            const insertSpaces = editorConfig.get<boolean>("insertSpaces", true);
+
             this.sendMessage({
                 type: "file",
                 payload: {
                     uri: uriString,
                     content: text,
-                    format: { tabSize: 2, insertSpaces: true, eol }
+                    format: { tabSize, insertSpaces, eol }
                 }
             });
         } catch {

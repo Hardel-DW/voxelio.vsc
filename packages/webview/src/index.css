@@ -791,56 +791,6 @@ button.move:disabled svg {
     gap: 16px;
 }
 
-.header-scale-slider {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.header-scale-label {
-    font-size: 10px;
-    color: var(--node-text-dimmed);
-    white-space: nowrap;
-    min-width: 42px;
-}
-
-.header-scale-input {
-    width: 60px;
-    height: 4px;
-    appearance: none;
-    background: var(--node-border);
-    border-radius: 2px;
-    cursor: pointer;
-}
-
-.header-scale-input::-webkit-slider-thumb {
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    background: var(--node-text-dimmed);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.header-scale-input::-webkit-slider-thumb:hover {
-    background: var(--node-text);
-}
-
-.header-scale-input::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    background: var(--node-text-dimmed);
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.header-scale-input::-moz-range-thumb:hover {
-    background: var(--node-text);
-}
-
 .header-icon {
     display: flex;
     align-items: center;

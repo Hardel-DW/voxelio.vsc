@@ -1,18 +1,17 @@
-import type { AstNode, DocAndNode, FileNode, LanguageError, MetaRegistry, SymbolRegistrar } from "@spyglassmc/core";
-import {
-    CheckerContext,
-    ConfigService,
-    ErrorReporter,
-    type ExternalFileSystem,
-    type Externals,
-    FormatterContext,
-    type FsLocation,
-    type FsWatcher,
-    ProfilerFactory,
-    type ProjectInitializer,
-    Service,
-    VanillaConfig
+import type {
+    AstNode,
+    DocAndNode,
+    ExternalFileSystem,
+    Externals,
+    FileNode,
+    FsLocation,
+    FsWatcher,
+    LanguageError,
+    MetaRegistry,
+    ProjectInitializer,
+    SymbolRegistrar
 } from "@spyglassmc/core";
+import { CheckerContext, ConfigService, ErrorReporter, FormatterContext, ProfilerFactory, Service, VanillaConfig } from "@spyglassmc/core";
 import { BrowserExternals } from "@spyglassmc/core/lib/browser.js";
 import { uriBinder } from "@spyglassmc/java-edition/lib/binder/index.js";
 import type { McmetaStates, McmetaSummary } from "@spyglassmc/java-edition/lib/dependency/index.js";

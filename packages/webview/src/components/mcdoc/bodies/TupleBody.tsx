@@ -1,13 +1,13 @@
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
 import type { TupleType } from "@spyglassmc/mcdoc";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { Body } from "@/components/mcdoc/Body.tsx";
 import { Errors } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { simplifyType } from "@/services/McdocHelpers.ts";
 
 // Misode: McdocRenderer.tsx:1080-1092

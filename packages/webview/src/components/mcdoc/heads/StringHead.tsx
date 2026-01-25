@@ -1,13 +1,14 @@
 import { Range, Source, string } from "@spyglassmc/core";
 import { JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import { getValues } from "@spyglassmc/mcdoc/lib/runtime/completer/index.js";
 import type { JSX } from "preact";
 import { Autocomplete } from "@/components/Autocomplete.tsx";
 import { Octicon } from "@/components/Icons.tsx";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
 import { Select } from "@/components/Select.tsx";
-import { formatIdentifier, getIdRegistry, isSelectRegistry, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
+import { formatIdentifier, getIdRegistry, isSelectRegistry } from "@/services/McdocHelpers.ts";
 import { generateColor, intToHexRgb } from "@/services/Utils.ts";
 
 type StringType = Extract<SimplifiedMcdocType, { kind: "string" }>;

@@ -1,11 +1,11 @@
 import { JsonArrayNode, JsonObjectNode } from "@spyglassmc/json";
 import type { JSX } from "preact";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
 import { getItemType, isFixedList, isInlineTuple, isListOrArray } from "@/services/McdocHelpers.ts";
 import { ListBody } from "./bodies/ListBody.tsx";
 import { StructBody } from "./bodies/StructBody.tsx";
 import { TupleBody } from "./bodies/TupleBody.tsx";
 import { UnionBody } from "./bodies/UnionBody.tsx";
-import type { NodeProps } from "./types.ts";
 
 // Misode: McdocRenderer.tsx:95-142
 export function Body({ type, node, ctx, optional }: NodeProps): JSX.Element | null {

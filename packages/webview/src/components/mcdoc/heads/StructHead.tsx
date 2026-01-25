@@ -1,8 +1,9 @@
 import { JsonObjectNode } from "@spyglassmc/json";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
-import { getDefault, type SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
+import { getDefault } from "@/services/McdocHelpers.ts";
 
 type StructType = Extract<SimplifiedMcdocType, { kind: "struct" }>;
 

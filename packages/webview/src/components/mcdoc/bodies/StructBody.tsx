@@ -3,13 +3,13 @@ import { Range } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonObjectNode, type JsonStringNode } from "@spyglassmc/json";
 import type { LiteralType } from "@spyglassmc/mcdoc";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
-import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import { DynamicField } from "@/components/mcdoc/bodies/DynamicField.tsx";
+import { DynamicKey } from "@/components/mcdoc/bodies/DynamicKey.tsx";
+import { StaticField } from "@/components/mcdoc/bodies/StaticField.tsx";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
 import { simplifyType } from "@/services/McdocHelpers.ts";
-import { DynamicField } from "./DynamicField.tsx";
-import { DynamicKey } from "./DynamicKey.tsx";
-import { StaticField } from "./StaticField.tsx";
 
 type StructType = Extract<SimplifiedMcdocType, { kind: "struct" }>;
 

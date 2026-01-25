@@ -1,6 +1,7 @@
 import type { ItemNode } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { useState } from "preact/hooks";
 import { Octicon } from "@/components/Icons.tsx";
@@ -8,9 +9,9 @@ import { Body } from "@/components/mcdoc/Body.tsx";
 import { Errors } from "@/components/mcdoc/ErrorIndicator.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import { Key } from "@/components/mcdoc/Key.tsx";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import { getCategory, getDefault, getItemType, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
+import { getCategory, getDefault, getItemType, simplifyType } from "@/services/McdocHelpers.ts";
 import { StructBody } from "./StructBody.tsx";
 
 type ListType = Extract<SimplifiedMcdocType, { kind: "list" | "byte_array" | "int_array" | "long_array" | "tuple" }>;

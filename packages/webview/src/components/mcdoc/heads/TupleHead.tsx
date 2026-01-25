@@ -1,12 +1,13 @@
 import type { ItemNode } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonArrayNode } from "@spyglassmc/json";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import { getDefault, isInlineTuple, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
+import { getDefault, isInlineTuple, simplifyType } from "@/services/McdocHelpers.ts";
 
 type TupleTypeDef = Extract<SimplifiedMcdocType, { kind: "tuple" }>;
 

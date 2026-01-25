@@ -1,4 +1,5 @@
 import type { JSX } from "preact";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
 import { getItemType, isFixedList, isListOrArray } from "@/services/McdocHelpers.ts";
 import { BooleanHead } from "./heads/BooleanHead.tsx";
 import { EnumHead } from "./heads/EnumHead.tsx";
@@ -8,7 +9,6 @@ import { StringHead } from "./heads/StringHead.tsx";
 import { StructHead } from "./heads/StructHead.tsx";
 import { TupleHead } from "./heads/TupleHead.tsx";
 import { UnionHead } from "./heads/UnionHead.tsx";
-import type { NodeProps } from "./types.ts";
 
 // Misode: McdocRenderer.tsx:58-93
 export function Head({ type, node, ctx, optional }: NodeProps): JSX.Element | null {

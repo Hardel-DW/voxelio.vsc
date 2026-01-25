@@ -1,6 +1,6 @@
 import { JsonBooleanNode } from "@spyglassmc/json";
 import type { JSX } from "preact";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
 
 // Misode: McdocRenderer.tsx:362-381
 export function BooleanHead({ node, ctx }: NodeProps): JSX.Element | null {

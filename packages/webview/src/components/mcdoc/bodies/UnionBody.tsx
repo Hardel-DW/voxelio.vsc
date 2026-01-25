@@ -1,7 +1,7 @@
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { Body } from "@/components/mcdoc/Body.tsx";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
-import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
 import { selectUnionMember } from "@/services/McdocHelpers.ts";
 
 type UnionTypeDef = Extract<SimplifiedMcdocType, { kind: "union" }>;

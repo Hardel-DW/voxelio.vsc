@@ -10,7 +10,6 @@ export function PackFormatPicker(props: { onSelect: (packFormat: number) => void
 
     const handleSelect = (packFormat: number): void => onSelect(packFormat);
     const handlePackTypeChange = (type: PackType): void => setPackType(type);
-
     const handleCustomFormatChange = (e: Event): void => {
         const target = e.target as HTMLInputElement;
         const filtered = target.value.replace(/[^0-9]/g, "").slice(0, 10);

@@ -1,10 +1,10 @@
 import type { AstNode, LanguageError } from "@spyglassmc/core";
 import { Range as RangeUtil } from "@spyglassmc/core";
 import type { JsonNode } from "@spyglassmc/json";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
 import type { McdocContext } from "@/services/McdocContext.ts";
-import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { selectUnionMember } from "@/services/McdocHelpers.ts";
 
 // Misode: McdocRenderer.tsx:1210-1248

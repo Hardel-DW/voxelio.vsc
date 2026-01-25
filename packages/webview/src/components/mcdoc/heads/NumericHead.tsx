@@ -1,9 +1,9 @@
 import type { FloatNode, LongNode } from "@spyglassmc/core";
 import { JsonNumberNode } from "@spyglassmc/json";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { Octicon } from "@/components/Icons.tsx";
-import type { NodeProps } from "@/components/mcdoc/types.ts";
-import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
+import type { NodeProps } from "@/services/McdocHelpers.ts";
 import { generateColor, intToHexRgb, randomInt, randomSeed } from "@/services/Utils.ts";
 
 type NumericType = Extract<SimplifiedMcdocType, { kind: "byte" | "short" | "int" | "long" | "float" | "double" }>;

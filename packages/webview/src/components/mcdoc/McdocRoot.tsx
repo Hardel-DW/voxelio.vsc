@@ -1,8 +1,8 @@
 import type { JsonNode } from "@spyglassmc/json";
 import { JsonObjectNode } from "@spyglassmc/json";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import type { McdocContext } from "@/services/McdocContext.ts";
-import type { SimplifiedMcdocType } from "@/services/McdocHelpers.ts";
 import { Body } from "./Body.tsx";
 import { StructBody } from "./bodies/StructBody.tsx";
 import { Head } from "./Head.tsx";

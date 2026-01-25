@@ -1,7 +1,8 @@
-import type { CheckerContext, FloatNode, ItemNode, LongNode } from "@spyglassmc/core";
+import type { CheckerContext, DocAndNode, FloatNode, ItemNode, LongNode } from "@spyglassmc/core";
 import { Range } from "@spyglassmc/core";
+import { dissectUri } from "@spyglassmc/java-edition/lib/binder/index.js";
 import type { JsonNode, JsonPairNode } from "@spyglassmc/json";
-import { JsonArrayNode, JsonObjectNode, JsonStringNode } from "@spyglassmc/json";
+import { JsonArrayNode, JsonFileNode, JsonObjectNode, JsonStringNode } from "@spyglassmc/json";
 import { JsonStringOptions } from "@spyglassmc/json/lib/parser/string.js";
 import type {
     Attributes,
@@ -16,17 +17,25 @@ import type {
 import { NumericRange, RangeKind } from "@spyglassmc/mcdoc";
 import type {
     McdocCheckerContext,
+    SimplifiedMcdocType,
+    SimplifiedMcdocTypeNoUnion,
     SimplifiedStructType,
-    SimplifyValueNode,
-    SimplifiedMcdocType as SpyglassSimplifiedMcdocType,
-    SimplifiedMcdocTypeNoUnion as SpyglassSimplifiedMcdocTypeNoUnion
+    SimplifyValueNode
 } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import { simplify } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
-import { randomInt, randomSeed } from "./Utils.ts";
+import { DEFAULT_COLLAPSED_TYPES, SELECT_REGISTRIES } from "@voxel/shared/constants";
+import type { McdocContext } from "@/services/McdocContext";
+import type { SpyglassService } from "@/services/SpyglassService";
+import { randomInt, randomSeed } from "@/services/Utils.ts";
 
-export type SimplifiedMcdocType = SpyglassSimplifiedMcdocType;
-export type SimplifiedMcdocTypeNoUnion = SpyglassSimplifiedMcdocTypeNoUnion;
 export type SimplifiedMcdocField = SimplifiedStructType["fields"][number];
+export interface NodeProps<T extends SimplifiedMcdocType = SimplifiedMcdocType> {
+    type: T;
+    node: JsonNode | undefined;
+    ctx: McdocContext;
+    optional?: boolean;
+    excludeStrings?: string[];
+}
 
 export function getRootType(id: string): McdocType {
     if (id === "pack_mcmeta") {
@@ -424,63 +433,6 @@ export function getCategory(type: McdocType): string | undefined {
     }
 }
 
-const SELECT_REGISTRIES = new Set([
-    "block_predicate_type",
-    "chunk_status",
-    "consume_effect_type",
-    "creative_mode_tab",
-    "data_component_predicate_type",
-    "data_component_type",
-    "enchantment_effect_component_type",
-    "enchantment_entity_effect_type",
-    "enchantment_level_based_value_type",
-    "enchantment_location_based_effect_type",
-    "enchantment_provider_type",
-    "enchantment_value_effect_type",
-    "entity_sub_predicate_type",
-    "float_provider_type",
-    "height_provider_type",
-    "int_provider_type",
-    "item_sub_predicate_type",
-    "loot_condition_type",
-    "loot_function_type",
-    "loot_nbt_provider_type",
-    "loot_number_provider_type",
-    "loot_pool_entry_type",
-    "loot_score_provider_type",
-    "number_format_type",
-    "pos_rule_test",
-    "position_source_type",
-    "recipe_book_category",
-    "recipe_display",
-    "recipe_serializer",
-    "recipe_type",
-    "rule_block_entity_modifier",
-    "rule_test",
-    "slot_display",
-    "stat_type",
-    "trigger_type",
-    "worldgen/biome_source",
-    "worldgen/block_state_provider_type",
-    "worldgen/carver",
-    "worldgen/chunk_generator",
-    "worldgen/density_function_type",
-    "worldgen/feature",
-    "worldgen/feature_size_type",
-    "worldgen/foliage_placer_type",
-    "worldgen/material_condition",
-    "worldgen/material_rule",
-    "worldgen/placement_modifier_type",
-    "worldgen/pool_alias_binding",
-    "worldgen/root_placer_type",
-    "worldgen/structure_placement",
-    "worldgen/structure_pool_element",
-    "worldgen/structure_processor",
-    "worldgen/structure_type",
-    "worldgen/tree_decorator_type",
-    "worldgen/trunk_placer_type"
-]);
-
 export function isSelectRegistry(registry: string): boolean {
     return SELECT_REGISTRIES.has(registry);
 }
@@ -501,8 +453,6 @@ export function getIdRegistry(type: StringType): string | undefined {
     }
     return undefined;
 }
-
-const DEFAULT_COLLAPSED_TYPES = new Set(["::java::data::worldgen::surface_rule::SurfaceRule"]);
 
 export function isDefaultCollapsedType(type: McdocType): boolean {
     return type.kind === "reference" && type.path !== undefined && DEFAULT_COLLAPSED_TYPES.has(type.path);
@@ -537,4 +487,55 @@ export function selectUnionMember(
     }
 
     return selectedType;
+}
+
+export function getCategoryFromType(type: string | undefined): string | undefined {
+    switch (type) {
+        case "item_modifier":
+            return "function";
+        case "predicate":
+            return "predicate";
+        default:
+            return undefined;
+    }
+}
+
+export function createMcdocContext(docAndNode: DocAndNode, service: SpyglassService, defaultCollapsed: boolean): McdocContext {
+    const errors = [
+        ...(docAndNode.node.binderErrors ?? []),
+        ...(docAndNode.node.checkerErrors ?? []),
+        ...(docAndNode.node.linterErrors ?? [])
+    ];
+
+    const checkerCtx = service.getCheckerContext(docAndNode.doc, errors);
+
+    const makeEdit = (edit: (range: Range) => JsonNode | undefined): void => {
+        service.applyEdit(docAndNode.doc.uri, (fileNode) => {
+            const jsonFileNode = fileNode.children[0];
+            if (JsonFileNode.is(jsonFileNode)) {
+                const original = jsonFileNode.children[0] as JsonNode;
+                const newNode = edit(original.range);
+                if (newNode !== undefined) {
+                    newNode.parent = fileNode;
+                    fileNode.children[0] = newNode;
+                }
+            }
+        });
+    };
+
+    return { ...checkerCtx, makeEdit, defaultCollapsed };
+}
+
+export function getResourceType(docAndNode: DocAndNode, ctx: McdocContext): string | undefined {
+    if (docAndNode.doc.uri.endsWith("/pack.mcmeta")) {
+        return "pack_mcmeta";
+    }
+    const res = dissectUri(docAndNode.doc.uri, ctx);
+    return res?.category;
+}
+
+export function getMcdocType(resourceType: string | undefined, ctx: McdocContext) {
+    if (!resourceType) return undefined;
+    const rootType = getRootType(resourceType);
+    return simplifyType(rootType, ctx);
 }

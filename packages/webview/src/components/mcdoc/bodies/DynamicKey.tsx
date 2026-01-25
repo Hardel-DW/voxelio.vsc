@@ -2,12 +2,13 @@ import { Range } from "@spyglassmc/core";
 import type { JsonPairNode } from "@spyglassmc/json";
 import { type JsonObjectNode, JsonStringNode } from "@spyglassmc/json";
 import type { McdocType } from "@spyglassmc/mcdoc";
+import type { SimplifiedMcdocType } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import type { JSX } from "preact";
 import { useState } from "preact/hooks";
 import { Octicon } from "@/components/Icons.tsx";
 import { Head } from "@/components/mcdoc/Head.tsx";
 import type { MakeEdit, McdocContext } from "@/services/McdocContext.ts";
-import { getDefault, type SimplifiedMcdocType, simplifyType } from "@/services/McdocHelpers.ts";
+import { getDefault, simplifyType } from "@/services/McdocHelpers.ts";
 
 // Misode: McdocRenderer.tsx:649-705
 interface DynamicKeyProps {

@@ -1,6 +1,7 @@
 import type { JSX } from "preact";
 import type { NodeProps } from "@/services/McdocHelpers.ts";
 import { getItemType, isFixedList, isListOrArray } from "@/services/McdocHelpers.ts";
+import { AnyHead } from "./heads/AnyHead.tsx";
 import { BooleanHead } from "./heads/BooleanHead.tsx";
 import { EnumHead } from "./heads/EnumHead.tsx";
 import { ListHead } from "./heads/ListHead.tsx";
@@ -59,7 +60,7 @@ export function Head({ type, node, ctx, optional }: NodeProps): JSX.Element | nu
 
         case "any":
         case "unsafe":
-            return <span class="any">any</span>;
+            return <AnyHead type={type} node={node} ctx={ctx} optional={optional} />;
 
         default:
             return null;

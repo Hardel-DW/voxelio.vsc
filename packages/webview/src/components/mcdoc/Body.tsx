@@ -2,6 +2,7 @@ import { JsonArrayNode, JsonObjectNode } from "@spyglassmc/json";
 import type { JSX } from "preact";
 import type { NodeProps } from "@/services/McdocHelpers.ts";
 import { getItemType, isFixedList, isInlineTuple, isListOrArray } from "@/services/McdocHelpers.ts";
+import { AnyBody } from "./bodies/AnyBody.tsx";
 import { ListBody } from "./bodies/ListBody.tsx";
 import { StructBody } from "./bodies/StructBody.tsx";
 import { TupleBody } from "./bodies/TupleBody.tsx";
@@ -65,6 +66,11 @@ export function Body({ type, node, ctx, optional }: NodeProps): JSX.Element | nu
                 <TupleBody type={type} node={node} ctx={ctx} optional={optional} />
             </div>
         );
+    }
+
+    // Misode: McdocRenderer.tsx:135-137
+    if (type.kind === "any" || type.kind === "unsafe") {
+        return <AnyBody type={type} node={node} ctx={ctx} optional={optional} />;
     }
 
     return null;

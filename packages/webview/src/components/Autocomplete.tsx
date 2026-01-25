@@ -15,34 +15,39 @@ interface AutocompleteProps {
 
 export function Autocomplete({ value, options, onChange, placeholder }: AutocompleteProps): JSX.Element | null {
     const [isOpen, setIsOpen] = useState(false);
-    const [filter, setFilter] = useState("");
+    const [search, setSearch] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
+    const searchRef = useRef<HTMLInputElement>(null);
 
     const filteredOptions = options.filter((opt) => {
-        const searchValue = filter || value;
-        if (!searchValue) return true;
-        return opt.value.toLowerCase().includes(searchValue.toLowerCase());
+        if (!search) return true;
+        const searchLower = search.toLowerCase();
+        return opt.value.toLowerCase().includes(searchLower) || (opt.label?.toLowerCase().includes(searchLower) ?? false);
     });
 
     const handleInputChange = (newValue: string): void => {
-        setFilter(newValue);
         onChange(newValue);
-        setIsOpen(true);
     };
 
     const handleSelect = (optionValue: string): void => {
         onChange(optionValue);
-        setFilter("");
+        setSearch("");
         setIsOpen(false);
         inputRef.current?.blur();
     };
 
     const handleFocus = (): void => {
         setIsOpen(true);
+        setSearch("");
+        setTimeout(() => searchRef.current?.focus(), 0);
     };
 
-    const handleBlur = (): void => {
-        setTimeout(() => setIsOpen(false), 150);
+    const handleBlur = (e: FocusEvent): void => {
+        const container = inputRef.current?.parentElement;
+        if (!container?.contains(e.relatedTarget as Node)) {
+            setIsOpen(false);
+            setSearch("");
+        }
     };
 
     return (
@@ -57,13 +62,24 @@ export function Autocomplete({ value, options, onChange, placeholder }: Autocomp
                 placeholder={placeholder}
             />
             {isOpen && filteredOptions.length > 0 && (
-                <ul class="autocomplete-dropdown">
-                    {filteredOptions.map((opt) => (
-                        <li key={opt.value} class={opt.value === value ? "selected" : ""} onMouseDown={() => handleSelect(opt.value)}>
-                            {opt.label ?? opt.value}
-                        </li>
-                    ))}
-                </ul>
+                <div class="autocomplete-dropdown">
+                    <input
+                        ref={searchRef}
+                        type="text"
+                        class="autocomplete-search"
+                        placeholder="Search..."
+                        value={search}
+                        onInput={(e) => setSearch(e.currentTarget.value)}
+                        onMouseDown={(e) => e.stopPropagation()}
+                    />
+                    <ul class="autocomplete-options">
+                        {filteredOptions.map((opt) => (
+                            <li key={opt.value} class={opt.value === value ? "selected" : ""} onMouseDown={() => handleSelect(opt.value)}>
+                                {opt.label ?? opt.value}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </div>
     );

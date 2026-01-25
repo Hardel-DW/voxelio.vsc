@@ -1,6 +1,5 @@
 import type { DocAndNode } from "@spyglassmc/core";
 import { dissectUri } from "@spyglassmc/java-edition/lib/binder/index.js";
-import { DEFAULT_SETTINGS } from "@voxel/shared/constants";
 import type {
     ExtensionMessage,
     FileFormat,
@@ -12,7 +11,8 @@ import type {
     UserSettings,
     VersionConfig,
     WebviewMessage
-} from "@voxel/shared/types";
+} from "@voxel/shared";
+import { DEFAULT_SETTINGS } from "@voxel/shared";
 import type { JSX } from "preact";
 import { useSyncExternalStore } from "preact/compat";
 import { useState } from "preact/hooks";

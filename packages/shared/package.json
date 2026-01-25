@@ -3,9 +3,5 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "exports": {
-        "./types": "./src/types.ts",
-        "./versions": "./src/versions.ts",
-        "./constants": "./src/constants.ts"
-    }
+    "main": "./src/index.ts"
 }

@@ -1,15 +1,15 @@
-import { DEFAULT_SETTINGS } from "@voxel/shared/constants";
-import type {
-    ExtensionMessage,
-    MutableRegistries,
-    PackDetectionResult,
-    PackStatus,
-    RegistriesPayload,
-    UserSettings,
-    VersionConfig,
-    WebviewMessage
-} from "@voxel/shared/types";
-import { getVersionFromPackFormat } from "@voxel/shared/versions";
+import {
+    DEFAULT_SETTINGS,
+    type ExtensionMessage,
+    getVersionFromPackFormat,
+    type MutableRegistries,
+    type PackDetectionResult,
+    type PackStatus,
+    type RegistriesPayload,
+    type UserSettings,
+    type VersionConfig,
+    type WebviewMessage
+} from "@voxel/shared";
 import type {
     ConfigurationChangeEvent,
     Disposable,

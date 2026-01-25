@@ -19,7 +19,7 @@ import type { JsonNode } from "@spyglassmc/json";
 import { getInitializer } from "@spyglassmc/json";
 import { initialize as mcdocInitialize } from "@spyglassmc/mcdoc";
 import { attribute, registerAttribute } from "@spyglassmc/mcdoc/lib/runtime/index.js";
-import type { FileFormat, McdocFile, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared/types";
+import type { FileFormat, McdocFile, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared";
 import { extractZip, makeZip } from "@voxelio/zip";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { fetchBlockStates, fetchRegistries, fetchVanillaMcdoc, fetchVersions } from "@/services/DataFetcher.ts";

@@ -4,7 +4,7 @@
     "type": "module",
     "packageManager": "pnpm@9.15.0",
     "scripts": {
-        "vsce:package": "pnpm build && cd packages/extension && npx vsce package",
+        "vsce:package": "pnpm build && cd packages/extension && npx vsce package --no-dependencies",
         "build": "pnpm -r build",
         "dev": "pnpm -r --parallel dev",
         "lint": "pnpm -r lint",

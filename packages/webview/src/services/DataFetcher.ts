@@ -1,6 +1,5 @@
-import { MCMETA_URL, VANILLA_MCDOC_URL } from "@voxel/shared/constants";
-import type { BlockStateData, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared/types";
-import { parseRegistries } from "@voxel/shared/types";
+import type { BlockStateData, VanillaMcdocSymbols, VersionConfig, VersionMeta } from "@voxel/shared";
+import { MCMETA_URL, parseRegistries, VANILLA_MCDOC_URL } from "@voxel/shared";
 
 const CACHE_NAME = "minode-v1";
 

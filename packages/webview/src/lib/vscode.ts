@@ -1,4 +1,4 @@
-import type { WebviewMessage } from "@voxel/shared/types";
+import type { WebviewMessage } from "@voxel/shared";
 
 interface PersistedState {
     realUri?: string;

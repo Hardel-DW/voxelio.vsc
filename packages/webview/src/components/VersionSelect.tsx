@@ -1,4 +1,4 @@
-import { getVersionsForPackType, type PackType } from "@voxel/shared/versions";
+import { getVersionsForPackType, type PackType } from "@voxel/shared";
 import type { JSX } from "preact";
 import { useRef, useState } from "preact/hooks";
 import { CustomFormatInput } from "@/components/CustomFormatInput.tsx";

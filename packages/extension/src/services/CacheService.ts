@@ -1,8 +1,6 @@
 import { promises } from "node:fs";
 import { join } from "node:path";
-import { MCMETA_URL, VANILLA_MCDOC_URL } from "@voxel/shared/constants";
-import type { VanillaMcdocSymbols, VersionConfig } from "@voxel/shared/types";
-import { parseRegistries } from "@voxel/shared/types";
+import { MCMETA_URL, parseRegistries, VANILLA_MCDOC_URL, type VanillaMcdocSymbols, type VersionConfig } from "@voxel/shared";
 import type { ExtensionContext } from "vscode";
 
 export class CacheService {

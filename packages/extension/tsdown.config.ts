@@ -6,5 +6,6 @@ export default defineConfig({
     platform: "node",
     external: ["vscode"],
     format: "cjs",
-    clean: true
+    clean: true,
+    noExternal: ["@voxel/shared"]
 });

@@ -23,7 +23,7 @@ import type {
     SimplifyValueNode
 } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import { simplify } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
-import { CATEGORY_FROM_TYPE, DEFAULT_COLLAPSED_TYPES, SELECT_REGISTRIES } from "@voxel/shared/constants";
+import { CATEGORY_FROM_TYPE, DEFAULT_COLLAPSED_TYPES, SELECT_REGISTRIES } from "@voxel/shared";
 import type { McdocContext } from "@/services/McdocContext";
 import type { SpyglassService } from "@/services/SpyglassService";
 import { randomInt, randomSeed } from "@/services/Utils.ts";

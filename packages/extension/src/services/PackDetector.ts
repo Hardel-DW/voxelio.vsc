@@ -1,4 +1,4 @@
-import type { McdocFile, MutableRegistries, PackDetectionResult, RegistriesPayload, SpyglassConfig } from "@voxel/shared/types";
+import type { McdocFile, MutableRegistries, PackDetectionResult, RegistriesPayload, SpyglassConfig } from "@voxel/shared";
 import { RelativePattern, Uri, workspace } from "vscode";
 
 const SPYGLASS_CONFIG_NAMES = ["spyglass.json", ".spyglassrc", ".spyglassrc.json"] as const;

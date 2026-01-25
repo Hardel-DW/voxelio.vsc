@@ -15,7 +15,6 @@ export function BooleanHead({ node, ctx }: NodeProps): JSX.Element | null {
         });
     };
 
-    // Misode: direct buttons in node-header, no wrapper
     return (
         <>
             <button type="button" class={value === false ? "selected" : ""} onClick={() => handleSelect(false)}>

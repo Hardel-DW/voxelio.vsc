@@ -1,6 +1,6 @@
 import type { MutableRegistries, RegistriesPayload } from "@voxel/shared/types";
-import * as vscode from "vscode";
-import type { PackDetectionResult, PackInfo } from "@/types.ts";
+import { RelativePattern, Uri, workspace } from "vscode";
+import type { PackDetectionResult } from "@voxel/shared/types";
 
 type PackVersion = number | [number] | [number, number];
 
@@ -14,22 +14,22 @@ interface PackMcmeta {
 }
 
 export class PackDetector {
-    async findPackRootFromFile(fileUri: vscode.Uri): Promise<PackDetectionResult> {
-        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    async findPackRootFromFile(fileUri: Uri): Promise<PackDetectionResult> {
+        const workspaceRoot = workspace.workspaceFolders?.[0]?.uri.fsPath;
         if (!workspaceRoot) {
             return { status: "notFound" };
         }
 
-        let currentDir = vscode.Uri.joinPath(fileUri, "..");
+        let currentDir = Uri.joinPath(fileUri, "..");
 
         while (currentDir.fsPath.length >= workspaceRoot.length) {
-            const packMcmetaUri = vscode.Uri.joinPath(currentDir, "pack.mcmeta");
+            const packMcmetaUri = Uri.joinPath(currentDir, "pack.mcmeta");
 
             try {
-                await vscode.workspace.fs.stat(packMcmetaUri);
+                await workspace.fs.stat(packMcmetaUri);
                 return this.validatePackMcmeta(packMcmetaUri);
             } catch {
-                const parentDir = vscode.Uri.joinPath(currentDir, "..");
+                const parentDir = Uri.joinPath(currentDir, "..");
                 if (parentDir.fsPath === currentDir.fsPath) {
                     break;
                 }
@@ -40,40 +40,40 @@ export class PackDetector {
         return { status: "notFound" };
     }
 
-    private async validatePackMcmeta(uri: vscode.Uri): Promise<PackDetectionResult> {
+    private async validatePackMcmeta(uri: Uri): Promise<PackDetectionResult> {
         const content = await this.readJson<PackMcmeta>(uri);
+        const uriString = uri.toString();
 
         if (content === null) {
-            return { status: "invalid", uri, reason: "Invalid JSON syntax" };
+            return { status: "invalid", uri: uriString, reason: "Invalid JSON syntax" };
         }
 
         if (!content.pack) {
-            return { status: "invalid", uri, reason: "Missing 'pack' object" };
+            return { status: "invalid", uri: uriString, reason: "Missing 'pack' object" };
         }
 
         const packFormat = this.extractPackFormat(content);
 
         if (packFormat === null) {
-            return { status: "invalid", uri, reason: "Missing or invalid pack_format" };
+            return { status: "invalid", uri: uriString, reason: "Missing or invalid pack_format" };
         }
 
-        const pack: PackInfo = { uri, packFormat, description: content.pack.description };
-        return { status: "found", pack };
+        return { status: "found", pack: { uri: uriString, packFormat, description: content.pack.description } };
     }
 
-    async scanWorkspaceRegistries(packRoot?: vscode.Uri): Promise<RegistriesPayload> {
+    async scanWorkspaceRegistries(packRoot?: Uri): Promise<RegistriesPayload> {
         const registries: MutableRegistries = {};
 
-        const dataJsonPattern = packRoot ? new vscode.RelativePattern(packRoot, "data/**/*.json") : "data/**/*.json";
-        const assetsJsonPattern = packRoot ? new vscode.RelativePattern(packRoot, "assets/**/*.json") : "assets/**/*.json";
+        const dataJsonPattern = packRoot ? new RelativePattern(packRoot, "data/**/*.json") : "data/**/*.json";
+        const assetsJsonPattern = packRoot ? new RelativePattern(packRoot, "assets/**/*.json") : "assets/**/*.json";
         const mcfunctionPattern = packRoot
-            ? new vscode.RelativePattern(packRoot, "data/**/function/**/*.mcfunction")
+            ? new RelativePattern(packRoot, "data/**/function/**/*.mcfunction")
             : "data/**/function/**/*.mcfunction";
 
         const [dataJsonFiles, assetsJsonFiles, mcfunctionFiles] = await Promise.all([
-            vscode.workspace.findFiles(dataJsonPattern),
-            vscode.workspace.findFiles(assetsJsonPattern),
-            vscode.workspace.findFiles(mcfunctionPattern)
+            workspace.findFiles(dataJsonPattern),
+            workspace.findFiles(assetsJsonPattern),
+            workspace.findFiles(mcfunctionPattern)
         ]);
 
         for (const file of dataJsonFiles) {
@@ -156,8 +156,8 @@ export class PackDetector {
         return Array.isArray(version) ? version[0] : version;
     }
 
-    private async readJson<T>(uri: vscode.Uri): Promise<T | null> {
-        const bytes = await vscode.workspace.fs.readFile(uri);
+    private async readJson<T>(uri: Uri): Promise<T | null> {
+        const bytes = await workspace.fs.readFile(uri);
         const text = new TextDecoder().decode(bytes);
 
         try {

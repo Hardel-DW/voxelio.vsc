@@ -8,11 +8,9 @@ import { generateColor, intToHexRgb, randomInt, randomSeed } from "@/services/Ut
 
 type NumericType = Extract<SimplifiedMcdocType, { kind: "byte" | "short" | "int" | "long" | "float" | "double" }>;
 
-// Misode: McdocRenderer.tsx:294-359
+// Misode: McdocRenderer.tsx:294-359 and 333-348
 export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): JSX.Element | null {
     const nodeValue = node && JsonNumberNode.is(node) ? Number(node.value.value) : undefined;
-
-    // Misode: McdocRenderer.tsx:333-334
     const colorAttr = type.attributes?.find((a) => a.name === "color")?.value;
     const colorKind = colorAttr?.kind === "literal" && colorAttr.value.kind === "string" ? colorAttr.value.value : undefined;
     const hasRandom = type.attributes?.some((a) => a.name === "random");
@@ -38,17 +36,14 @@ export function NumericHead({ type, node, ctx }: NodeProps<NumericType>): JSX.El
         updateValue(number);
     };
 
-    // Misode: McdocRenderer.tsx:336-338
     const handleColorChange = (e: JSX.TargetedEvent<HTMLInputElement>): void => {
         updateValue(Number.parseInt(e.currentTarget.value.slice(1), 16));
     };
 
-    // Misode: McdocRenderer.tsx:340-342
     const handleRandomColor = (): void => {
         updateValue(generateColor());
     };
 
-    // Misode: McdocRenderer.tsx:346-348
     const handleRandom = (): void => {
         updateValue(type.kind === "long" ? randomSeed() : randomInt());
     };

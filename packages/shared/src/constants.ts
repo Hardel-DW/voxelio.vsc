@@ -24,6 +24,11 @@ export const DEFAULT_SETTINGS: UserSettings = {
 
 export const DEFAULT_COLLAPSED_TYPES = new Set(["::java::data::worldgen::surface_rule::SurfaceRule"]);
 
+export const CATEGORY_FROM_TYPE: Record<string, string> = {
+    item_modifier: "function",
+    predicate: "predicate"
+};
+
 export const SELECT_REGISTRIES = new Set([
     "block_predicate_type",
     "chunk_status",

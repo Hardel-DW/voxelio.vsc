@@ -24,7 +24,7 @@ import type {
 import { commands, Position, Range, RelativePattern, Uri, WorkspaceEdit, window, workspace } from "vscode";
 import { CacheService } from "@/services/CacheService.ts";
 import { PackDetector } from "@/services/PackDetector.ts";
-import type { PackDetectionResult } from "@/types.ts";
+import type { PackDetectionResult } from "@voxel/shared/types";
 
 export class NodeEditorProvider implements WebviewViewProvider {
     static readonly viewType = "minode.nodeEditor";
@@ -239,19 +239,14 @@ export class NodeEditorProvider implements WebviewViewProvider {
         if (!this.view?.visible) return;
 
         const uri = this.getActiveTabUri();
-
-        // No tab open
         if (!uri) {
             this.currentFileUri = undefined;
             return;
         }
 
         const fsPath = uri.fsPath;
-
-        // Same file, nothing to do
         if (this.currentFileUri === uri.toString()) return;
 
-        // Unsupported file
         if (!this.isSupportedPath(fsPath)) {
             this.currentFileUri = undefined;
             this.sendMessage({
@@ -261,7 +256,6 @@ export class NodeEditorProvider implements WebviewViewProvider {
             return;
         }
 
-        // Supported file - load it
         this.currentFileUri = uri.toString();
         await this.detectAndSwitchPack(uri);
         await this.loadAndSendFile(uri);
@@ -301,7 +295,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
             return;
         }
 
-        const newPackRoot = Uri.joinPath(result.pack.uri, "..");
+        const newPackRoot = Uri.joinPath(Uri.parse(result.pack.uri), "..");
         const isSamePack = this.currentPackRoot?.fsPath === newPackRoot.fsPath;
 
         if (isSamePack && this.currentPackFormat === result.pack.packFormat) {

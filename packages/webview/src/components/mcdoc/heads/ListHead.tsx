@@ -34,11 +34,7 @@ export function ListHead({ type, node, ctx }: NodeProps<ListType>): JSX.Element 
                 return arrayNode;
             }
 
-            const newArray: JsonArrayNode = {
-                type: "json:array",
-                range,
-                children: [newItem]
-            };
+            const newArray: JsonArrayNode = { type: "json:array", range, children: [newItem] };
             newItem.parent = newArray;
             return newArray;
         });

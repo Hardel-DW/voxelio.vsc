@@ -16,13 +16,8 @@ export function TupleHead({ type, node, ctx, optional }: NodeProps<TupleTypeDef>
     const arrayNode = JsonArrayNode.is(node) ? node : undefined;
     const isInline = isInlineTuple(type);
 
-    const handleRemove = (): void => {
-        ctx.makeEdit(() => undefined);
-    };
-
-    const handleSetDefault = (): void => {
-        ctx.makeEdit((range) => getDefault(type, range, ctx));
-    };
+    const handleRemove = (): void => ctx.makeEdit(() => undefined);
+    const handleSetDefault = (): void => ctx.makeEdit((range) => getDefault(type, range, ctx));
 
     if (!isInline) {
         const maxLength = type.items.length;
@@ -55,7 +50,6 @@ export function TupleHead({ type, node, ctx, optional }: NodeProps<TupleTypeDef>
         );
     }
 
-    // Inline tuple (UUID etc): single delete/+ button + all items inline
     return (
         <>
             {optional ? (

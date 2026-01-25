@@ -17,10 +17,8 @@ export function EnumHead({ type, node, ctx }: NodeProps<EnumType>): JSX.Element 
         if (value === newValue) return;
 
         ctx.makeEdit((range) => {
-            if (newValue === "") {
-                return undefined;
-            }
-            // Misode: creates json:string with proper options and valueMap
+            if (newValue === "") return undefined;
+
             return {
                 type: "json:string",
                 range,

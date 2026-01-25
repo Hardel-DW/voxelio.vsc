@@ -9,11 +9,7 @@ type UnionTypeDef = Extract<SimplifiedMcdocType, { kind: "union" }>;
 
 // Misode: McdocRenderer.tsx:384-417
 export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>): JSX.Element | null {
-    if (type.members.length === 0) {
-        return null;
-    }
-
-    // Misode: selectUnionMember returns undefined if no valid selection
+    if (type.members.length === 0) return null;
     const selectedType = selectUnionMember(type, node);
     const memberIndex = selectedType ? type.members.findIndex((m) => quickEqualTypes(m, selectedType)) : -1;
 
@@ -39,7 +35,6 @@ export function UnionHead({ type, optional, node, ctx }: NodeProps<UnionTypeDef>
     }));
 
     const placeholder = selectedType === undefined || optional ? "-- unset --" : undefined;
-
     return (
         <>
             <Select

@@ -23,7 +23,7 @@ import type {
     SimplifyValueNode
 } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
 import { simplify } from "@spyglassmc/mcdoc/lib/runtime/checker/index.js";
-import { DEFAULT_COLLAPSED_TYPES, SELECT_REGISTRIES } from "@voxel/shared/constants";
+import { CATEGORY_FROM_TYPE, DEFAULT_COLLAPSED_TYPES, SELECT_REGISTRIES } from "@voxel/shared/constants";
 import type { McdocContext } from "@/services/McdocContext";
 import type { SpyglassService } from "@/services/SpyglassService";
 import { randomInt, randomSeed } from "@/services/Utils.ts";
@@ -490,14 +490,8 @@ export function selectUnionMember(
 }
 
 export function getCategoryFromType(type: string | undefined): string | undefined {
-    switch (type) {
-        case "item_modifier":
-            return "function";
-        case "predicate":
-            return "predicate";
-        default:
-            return undefined;
-    }
+    if (!type) return undefined;
+    return CATEGORY_FROM_TYPE[type];
 }
 
 export function createMcdocContext(docAndNode: DocAndNode, service: SpyglassService, defaultCollapsed: boolean): McdocContext {

@@ -50,11 +50,17 @@ export interface FilePayload {
     readonly format: FileFormat;
 }
 
+export interface UnsupportedFilePayload {
+    readonly uri: string;
+    readonly reason: string;
+}
+
 export type ExtensionMessage =
     | { readonly type: "init"; readonly payload: InitPayload }
     | { readonly type: "settings"; readonly payload: UserSettings }
     | { readonly type: "registries"; readonly payload: RegistriesPayload }
-    | { readonly type: "file"; readonly payload: FilePayload };
+    | { readonly type: "file"; readonly payload: FilePayload }
+    | { readonly type: "unsupportedFile"; readonly payload: UnsupportedFilePayload };
 
 export type WebviewMessage =
     | { readonly type: "ready" }

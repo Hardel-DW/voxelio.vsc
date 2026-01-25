@@ -51,17 +51,14 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private onVisibilityChanged(): void {
-        if (this.view?.visible && window.activeTextEditor) {
-            this.processEditor(window.activeTextEditor);
+        if (this.view?.visible) {
+            this.onActiveTabChanged();
         }
     }
 
     private initializeWebview(): void {
         this.sendMessage({ type: "init", payload: { pack: { state: "notFound" }, settings: this.getSettings() } });
-
-        if (window.activeTextEditor) {
-            this.processEditor(window.activeTextEditor);
-        }
+        this.onActiveTabChanged();
     }
 
     private toPackStatus(result: import("@/types.ts").PackDetectionResult, hasValidFile: boolean): PackStatus {
@@ -129,7 +126,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
 
     private registerEditorListeners(): void {
         this.disposables.push(
-            window.onDidChangeActiveTextEditor((editor) => this.onActiveEditorChanged(editor)),
+            window.tabGroups.onDidChangeTabs(() => this.onActiveTabChanged()),
             workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e)),
             workspace.onDidChangeConfiguration((e) => this.onConfigurationChanged(e))
         );
@@ -213,22 +210,74 @@ export class NodeEditorProvider implements WebviewViewProvider {
         await this.loadRegistries(version);
     }
 
-    private async onActiveEditorChanged(editor: TextEditor | undefined): Promise<void> {
-        if (!this.view?.visible) return;
-        await this.processEditor(editor);
+    private getActiveTabUri(): Uri | null {
+        const activeTab = window.tabGroups.activeTabGroup.activeTab;
+        if (!activeTab?.input || typeof activeTab.input !== "object" || !("uri" in activeTab.input)) {
+            return null;
+        }
+        return activeTab.input.uri as Uri;
     }
 
-    private async processEditor(editor: TextEditor | undefined): Promise<void> {
-        if (!editor || !this.isEditableFile(editor.document)) {
+    private isSupportedPath(fsPath: string): boolean {
+        if (fsPath.endsWith(".mcmeta")) return true;
+        if (fsPath.endsWith(".json") && (fsPath.includes("data") || fsPath.includes("assets"))) return true;
+        return false;
+    }
+
+    private async onActiveTabChanged(): Promise<void> {
+        if (!this.view?.visible) return;
+
+        const uri = this.getActiveTabUri();
+
+        // No tab open
+        if (!uri) {
             this.currentFileUri = undefined;
             return;
         }
 
-        const fileUri = editor.document.uri;
-        this.currentFileUri = fileUri.toString();
+        const fsPath = uri.fsPath;
 
-        await this.detectAndSwitchPack(fileUri);
-        this.sendFileContent(editor);
+        // Same file, nothing to do
+        if (this.currentFileUri === uri.toString()) return;
+
+        // Unsupported file
+        if (!this.isSupportedPath(fsPath)) {
+            this.currentFileUri = undefined;
+            this.sendMessage({
+                type: "unsupportedFile",
+                payload: { uri: uri.toString(), reason: "This file type is not supported by Mi-Node" }
+            });
+            return;
+        }
+
+        // Supported file - load it
+        this.currentFileUri = uri.toString();
+        await this.detectAndSwitchPack(uri);
+        await this.loadAndSendFile(uri);
+    }
+
+    private async loadAndSendFile(uri: Uri): Promise<void> {
+        const editor = window.visibleTextEditors.find((e) => e.document.uri.toString() === uri.toString());
+        if (editor) {
+            this.sendFileContent(editor);
+            return;
+        }
+
+        try {
+            const content = await workspace.fs.readFile(uri);
+            const text = new TextDecoder().decode(content);
+            const eol = text.includes("\r\n") ? "\r\n" : "\n";
+            const editorConfig = workspace.getConfiguration("editor", uri);
+            const tabSize = editorConfig.get<number>("tabSize", 4);
+            const insertSpaces = editorConfig.get<boolean>("insertSpaces", true);
+
+            this.sendMessage({
+                type: "file",
+                payload: { uri: uri.toString(), content: text, format: { tabSize, insertSpaces, eol } }
+            });
+        } catch {
+            window.showErrorMessage("Mi-Node: Failed to read file");
+        }
     }
 
     private async detectAndSwitchPack(fileUri: Uri): Promise<void> {
@@ -275,12 +324,7 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private isEditableFile(document: TextDocument): boolean {
-        const path = document.uri.fsPath;
-
-        if (path.endsWith("pack.mcmeta")) return true;
-
-        if (document.languageId !== "json") return false;
-        return (path.includes("data") || path.includes("assets")) && path.endsWith(".json");
+        return this.isSupportedPath(document.uri.fsPath);
     }
 
     private sendFileContent(editor: TextEditor): void {
@@ -328,32 +372,12 @@ export class NodeEditorProvider implements WebviewViewProvider {
     }
 
     private async handleRequestFile(uriString: string): Promise<void> {
-        try {
-            const uri = Uri.parse(uriString);
-            const editor = window.visibleTextEditors.find((e) => e.document.uri.toString() === uriString);
-            if (editor) {
-                this.sendFileContent(editor);
-                return;
-            }
-
-            const content = await workspace.fs.readFile(uri);
-            const text = new TextDecoder().decode(content);
-            const eol = text.includes("\r\n") ? "\r\n" : "\n";
-            const editorConfig = workspace.getConfiguration("editor", uri);
-            const tabSize = editorConfig.get<number>("tabSize", 4);
-            const insertSpaces = editorConfig.get<boolean>("insertSpaces", true);
-
-            this.sendMessage({
-                type: "file",
-                payload: {
-                    uri: uriString,
-                    content: text,
-                    format: { tabSize, insertSpaces, eol }
-                }
-            });
-        } catch {
-            window.showErrorMessage("Mi-Node: Failed to read file");
+        const activeUri = this.getActiveTabUri();
+        if (!activeUri || !this.isSupportedPath(activeUri.fsPath)) {
+            return;
         }
+
+        await this.loadAndSendFile(Uri.parse(uriString));
     }
 
     private async handleSaveFile(uriString: string, content: string): Promise<void> {

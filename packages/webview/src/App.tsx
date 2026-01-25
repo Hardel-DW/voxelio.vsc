@@ -8,7 +8,7 @@ import { Footer } from "@/components/Footer.tsx";
 import { Header } from "@/components/Header.tsx";
 import { Octicon } from "@/components/Icons.tsx";
 import { JsonFileView } from "@/components/JsonFileView.tsx";
-import { VersionSelect } from "@/components/VersionSelect.tsx";
+import { PackFormatPicker } from "@/components/PackFormatPicker.tsx";
 import { WikiLink } from "@/components/WikiLink.tsx";
 import { getWikiLabel, getWikiUrl } from "@/config.ts";
 import { applyColorSettings } from "@/lib/colors.ts";
@@ -30,6 +30,11 @@ interface PendingFile {
     format: FileFormat;
 }
 
+interface UnsupportedFile {
+    uri: string;
+    reason: string;
+}
+
 interface AppState {
     packState: PackState;
     registries: RegistriesPayload | null;
@@ -41,6 +46,7 @@ interface AppState {
     error: string | null;
     pendingFile: PendingFile | null;
     settings: UserSettings;
+    unsupportedFile: UnsupportedFile | null;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -70,7 +76,8 @@ const initialState: AppState = {
     loading: false,
     error: null,
     pendingFile: null,
-    settings: DEFAULT_SETTINGS
+    settings: DEFAULT_SETTINGS,
+    unsupportedFile: null
 };
 
 let state = initialState;
@@ -167,7 +174,7 @@ async function handleRegistries(registries: RegistriesPayload): Promise<void> {
 }
 
 async function tryCreateService(): Promise<void> {
-    const { packState, registries, service, loading, pendingFile, virtualUri } = state;
+    const { packState, registries, service, loading } = state;
     if (packState.status !== "ready" || !registries || service || loading) return;
 
     setState({ loading: true });
@@ -175,6 +182,7 @@ async function tryCreateService(): Promise<void> {
         const newService = await SpyglassServiceClass.create(packState.version, registries);
         setState({ service: newService, loading: false });
 
+        const { pendingFile, virtualUri } = state;
         if (pendingFile) {
             await processFile(newService, pendingFile.uri, pendingFile.content, pendingFile.format, virtualUri);
         }
@@ -187,11 +195,16 @@ async function handleFile(realUri: string, content: string, format: FileFormat):
     const { service, virtualUri: oldVirtualUri } = state;
 
     if (!service) {
-        setState({ pendingFile: { uri: realUri, content, format } });
+        setState({ pendingFile: { uri: realUri, content, format }, unsupportedFile: null });
         return;
     }
 
+    setState({ unsupportedFile: null });
     await processFile(service, realUri, content, format, oldVirtualUri);
+}
+
+function handleUnsupportedFile(uri: string, reason: string): void {
+    setState({ unsupportedFile: { uri, reason }, docAndNode: null });
 }
 
 async function processFile(
@@ -257,6 +270,9 @@ function handleMessage(event: MessageEvent<ExtensionMessage>): void {
         case "file":
             handleFile(msg.payload.uri, msg.payload.content, msg.payload.format);
             break;
+        case "unsupportedFile":
+            handleUnsupportedFile(msg.payload.uri, msg.payload.reason);
+            break;
     }
 }
 
@@ -280,7 +296,7 @@ export function App(): JSX.Element | null {
         return true;
     });
 
-    const { packState, registries, service, docAndNode, loading, error, settings, virtualUri } = useSyncExternalStore(
+    const { packState, registries, service, docAndNode, loading, error, settings, virtualUri, unsupportedFile } = useSyncExternalStore(
         subscribe,
         getSnapshot
     );
@@ -293,6 +309,15 @@ export function App(): JSX.Element | null {
     };
 
     const fileContext = getFileContext();
+
+    if (unsupportedFile) {
+        return (
+            <div class="editor-layout">
+                <EmptyState icon={Octicon.alert} title="Unsupported file" description={unsupportedFile.reason} />
+                <Footer />
+            </div>
+        );
+    }
 
     if (packState.status === "loading" || packState.status === "notFound") {
         return (
@@ -320,13 +345,9 @@ export function App(): JSX.Element | null {
         return (
             <div class="editor-layout">
                 <div class="editor-content">
-                    <header class="editor-header">
-                        <div class="header-row">
-                            <VersionSelect packFormat={48} versionId="Select version" onSelect={handleVersionSelect} />
-                        </div>
-                        <span class="header-separator" />
-                    </header>
-                    <EmptyState icon={isInvalid ? Octicon.alert : Octicon.file_code} title={title} description={description} />
+                    <EmptyState icon={isInvalid ? Octicon.alert : Octicon.file_code} title={title} description={description}>
+                        <PackFormatPicker onSelect={handleVersionSelect} />
+                    </EmptyState>
                 </div>
                 <Footer />
             </div>

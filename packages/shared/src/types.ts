@@ -101,7 +101,6 @@ export type WebviewMessage =
     | { readonly type: "updateSettings"; readonly settings: Partial<UserSettings> }
     | { readonly type: "openSettings" };
 
-// Data fetching types (shared between extension and webview)
 export interface VanillaMcdocSymbols {
     readonly ref: string;
     readonly mcdoc: Record<string, unknown>;
@@ -116,8 +115,6 @@ export interface VersionMeta {
 }
 
 export type BlockStateData = [Record<string, string[]>, Record<string, string>];
-
-// Pack detection types (used by extension)
 export interface PackInfo {
     readonly packFormat: number;
     readonly description?: string;
@@ -128,7 +125,6 @@ export type PackDetectionResult =
     | { readonly status: "notFound" }
     | { readonly status: "invalid"; readonly uri: string; readonly reason: string };
 
-// Utility function for registry parsing (shared logic)
 export function parseRegistries(data: Record<string, string[]>): Map<string, string[]> {
     const result = new Map<string, string[]>();
     for (const [id, values] of Object.entries(data)) {
